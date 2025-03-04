@@ -86,15 +86,17 @@ using UnityEngine;
 public class AI : MonoBehaviour
 {
     // Gives access to important data about the AI agent (see above)
-    private AgentData _agentData;
+    public AgentData _agentData;
     // Gives access to the agent senses
-    private Sensing _agentSenses;
+    public Sensing _agentSenses;
     // gives access to the agents inventory
-    private InventoryController _agentInventory;
+    public InventoryController _agentInventory;
     // This is the script containing the AI agents actions
     // e.g. agentScript.MoveTo(enemy);
-    private AgentActions _agentActions;
+    public AgentActions _agentActions;
 
+    
+    private AIFSM _playerFSM;
 
     // Use this for initialization
     void Start ()
@@ -104,12 +106,14 @@ public class AI : MonoBehaviour
         _agentActions = GetComponent<AgentActions>();
         _agentSenses = GetComponentInChildren<Sensing>();
         _agentInventory = GetComponentInChildren<InventoryController>();
-
+        _playerFSM = new AIFSM(this);
     }
 
     // Update is called once per frame
     void Update ()
     {
         // Run your AI code in here
+        _playerFSM.FSMUpdate();
+        
     }
 }
