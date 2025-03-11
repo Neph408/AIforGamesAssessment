@@ -16,11 +16,7 @@ public class AIFSM
     }
     private void SetupFSM()
     {
-        b_MoveToRandomPositionForward = new BH_MoveToRandomPositionForward(this);
         b_StartState = new BH_StartState(this);
-
-
-
         SetCurrentState(b_StartState);
     }
 
@@ -51,5 +47,10 @@ public class AIFSM
             return true;
         }
         return false;
+    }
+
+    public AI GetOwnerAI()
+    {
+        return OwnerAI;
     }
 }

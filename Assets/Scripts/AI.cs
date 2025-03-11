@@ -96,7 +96,7 @@ public class AI : MonoBehaviour
     public AgentActions _agentActions;
 
     
-    private AIFSM _playerFSM;
+    public AIFSM _playerFSM;
 
     // Use this for initialization
     void Start ()
@@ -107,6 +107,7 @@ public class AI : MonoBehaviour
         _agentSenses = GetComponentInChildren<Sensing>();
         _agentInventory = GetComponentInChildren<InventoryController>();
         _playerFSM = new AIFSM(this);
+
     }
 
     // Update is called once per frame

@@ -13,14 +13,22 @@ public class BH_StartState : BehaviourStateTemplate
 
     public override void OnEntry()
     {
-        throw new System.NotImplementedException();
+        Debug.Log("Entered StartState");
     }
     public override void Execute()
     {
-        throw new System.NotImplementedException();
+        Debug.Log("Exec go brr");
+        if(_aifsm.GetOwnerAI()._agentData.FriendlyTeam == AgentData.Teams.RedTeam) // this can likely be compressed to a find objs with tag (ai.GetOwnerAI._ad.ft ? red : blue)
+        {
+            // whether to defend or attack
+        }
+        else
+        {
+            // same but if blue (literally only difference is communication)
+        }
     }
     public override void OnExit()
     {
-        throw new System.NotImplementedException();
+        Debug.Log("Exiting StartState");
     }
 }
