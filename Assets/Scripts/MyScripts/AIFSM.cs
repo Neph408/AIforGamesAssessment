@@ -4,11 +4,19 @@ using UnityEngine;
 
 public class AIFSM
 {
+    public enum e_Role
+    {
+        Defender,
+        Attacker
+    }
+
     private AI OwnerAI = null;
 
     public BH_MoveToRandomPositionForward b_MoveToRandomPositionForward;
     public BH_StartState b_StartState;
     private BehaviourStateTemplate CurrentState;
+
+    public e_Role role;
     public AIFSM(AI playerAI)
     {
         OwnerAI = playerAI;
@@ -16,8 +24,7 @@ public class AIFSM
     }
     private void SetupFSM()
     {
-        b_StartState = new BH_StartState(this);
-        SetCurrentState(b_StartState);
+        SetCurrentState(new BH_StartState(this));
     }
 
     public BehaviourStateTemplate GetCurrentState()
@@ -28,7 +35,7 @@ public class AIFSM
     public void SetCurrentState(BehaviourStateTemplate newBST)
     {
         if(CurrentState != null) {CurrentState.OnExit();}
-
+        OwnerAI.currentJob = newBST.GetName();
         CurrentState = newBST;
         CurrentState.OnEntry();
     }

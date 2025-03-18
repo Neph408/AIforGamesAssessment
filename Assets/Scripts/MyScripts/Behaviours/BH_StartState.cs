@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using UnityEditor.MPE;
 using UnityEngine;
 
 public class BH_StartState : BehaviourStateTemplate
@@ -14,18 +15,30 @@ public class BH_StartState : BehaviourStateTemplate
     public override void OnEntry()
     {
         Debug.Log("Entered StartState");
-    }
-    public override void Execute()
-    {
-        Debug.Log("Exec go brr");
-        if(_aifsm.GetOwnerAI()._agentData.FriendlyTeam == AgentData.Teams.RedTeam) // this can likely be compressed to a find objs with tag (ai.GetOwnerAI._ad.ft ? red : blue)
+        if(_aifsm.GetOwnerAI()._agentData.AgentName.Contains("2"))
         {
-            // whether to defend or attack
+            _aifsm.role = AIFSM.e_Role.Defender;
         }
         else
         {
-            // same but if blue (literally only difference is communication)
+            _aifsm.role = AIFSM.e_Role.Attacker;
         }
+    }
+    public override void Execute()
+    {
+        if(_aifsm.role == AIFSM.e_Role.Attacker)
+        {
+            Debug.Log("*woop*");
+        }
+        else if(_aifsm.role == AIFSM.e_Role.Defender)
+        {
+            _aifsm.SetCurrentState(new BH_DefenderPatrol(_aifsm));
+        }
+        else
+        {
+            Debug.LogError(_aifsm.GetOwnerAI()._agentData.AgentName + " has no role assigned");
+        }
+        
     }
     public override void OnExit()
     {

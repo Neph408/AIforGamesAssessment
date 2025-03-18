@@ -97,7 +97,7 @@ public class AI : MonoBehaviour
 
     
     public AIFSM _playerFSM;
-
+    public string currentJob;
     // Use this for initialization
     void Start ()
     {
