@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -10,6 +11,7 @@ public class BH_StartState : BehaviourStateTemplate
     public BH_StartState(AIFSM owner)
     {
         _aifsm = owner;
+        _AI = owner.GetOwnerAI();
     }
 
     public override void OnEntry()
@@ -28,7 +30,6 @@ public class BH_StartState : BehaviourStateTemplate
     {
         if(_aifsm.role == AIFSM.e_Role.Attacker)
         {
-            Debug.Log("*woop*");
         }
         else if(_aifsm.role == AIFSM.e_Role.Defender)
         {

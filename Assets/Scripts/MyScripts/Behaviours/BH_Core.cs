@@ -10,6 +10,7 @@ public class BH_Core : BehaviourStateTemplate
     public BH_Core(AIFSM owner)
     {
         _aifsm = owner;
+        _AI = owner.GetOwnerAI();
     }
 
     public override void OnEntry()

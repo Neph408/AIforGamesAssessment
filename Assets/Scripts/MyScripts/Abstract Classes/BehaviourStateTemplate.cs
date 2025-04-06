@@ -6,6 +6,7 @@ using UnityEngine;
 public abstract class BehaviourStateTemplate
 {
     public AIFSM _aifsm;
+    public AI _AI;
     private string className = "";
 
     public abstract void OnEntry();

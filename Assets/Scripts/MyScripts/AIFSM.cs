@@ -60,4 +60,11 @@ public class AIFSM
     {
         return OwnerAI;
     }
+
+    public float GetYNegatedMagnitude(Vector3 Target, Vector3 CurrentPosition) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
+    {
+        Target.y = 0;
+        CurrentPosition.y = 0;
+        return (Target - CurrentPosition).magnitude;
+    }
 }

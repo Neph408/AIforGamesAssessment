@@ -7,6 +7,7 @@ public class BH_MoveToRandomPositionForward : BehaviourStateTemplate
     public BH_MoveToRandomPositionForward(AIFSM owner)
     {
         _aifsm = owner;
+        _AI = owner.GetOwnerAI();
     }
 
     public override void OnEntry()
