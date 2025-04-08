@@ -7,31 +7,31 @@ using UnityEngine;
 
 public class BH_StartState : BehaviourStateTemplate
 {
-
     public BH_StartState(AIFSM owner)
     {
         _aifsm = owner;
         _AI = owner.GetOwnerAI();
+        jobName = "Starting Up";
+        //jobName += " " + _AI._agentData.FriendlyTeam.DisplayName()
     }
 
     public override void OnEntry()
     {
-        Debug.Log("Entered StartState");
         if(_aifsm.GetOwnerAI()._agentData.AgentName.Contains("2"))
         {
-            _aifsm.role = AIFSM.e_Role.Defender;
+            _aifsm._baseRole = AIFSM.BaseRole.Defender;
         }
         else
         {
-            _aifsm.role = AIFSM.e_Role.Attacker;
+            _aifsm._baseRole = AIFSM.BaseRole.Attacker;
         }
     }
-    public override void Execute()
+    public override AI.ExecuteResult Execute()
     {
-        if(_aifsm.role == AIFSM.e_Role.Attacker)
+        if(_aifsm._baseRole == AIFSM.BaseRole.Attacker)
         {
         }
-        else if(_aifsm.role == AIFSM.e_Role.Defender)
+        else if(_aifsm._baseRole == AIFSM.BaseRole.Defender)
         {
             _aifsm.SetCurrentState(new BH_DefenderPatrol(_aifsm));
         }
@@ -39,10 +39,12 @@ public class BH_StartState : BehaviourStateTemplate
         {
             Debug.LogError(_aifsm.GetOwnerAI()._agentData.AgentName + " has no role assigned");
         }
-        
+
+        returnResult.success = true;
+        return returnResult;
     }
     public override void OnExit()
     {
-        Debug.Log("Exiting StartState");
+        // nothing to see here
     }
 }

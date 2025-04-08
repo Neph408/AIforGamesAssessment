@@ -150,7 +150,7 @@ public class AgentData : MonoBehaviour
     {
         get
         {
-            if (gameObject.GetComponentInChildren<InventoryController>().HasItem(FriendlyFlagName))
+            if (gameObject.GetComponentInChildren<InventoryController>().HasItem(FriendlyFlagName).owned)
             {
                 return true;
             }
@@ -162,7 +162,7 @@ public class AgentData : MonoBehaviour
     {
         get
         {
-            if (gameObject.GetComponentInChildren<InventoryController>().HasItem(EnemyFlagName))
+            if (gameObject.GetComponentInChildren<InventoryController>().HasItem(EnemyFlagName).owned)
             {
                 return true;
             }

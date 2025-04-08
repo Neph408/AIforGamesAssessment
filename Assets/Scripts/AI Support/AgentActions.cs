@@ -191,7 +191,7 @@ public class AgentActions : MonoBehaviour
         if (item != null)
         {
             // Check we actually have it and it's usable
-            if (_agentInventory.HasItem(item.name) && item.GetComponent<IUsable>() != null)
+            if (_agentInventory.HasItem(item.name).owned && item.GetComponent<IUsable>() != null)
             {
                 _agentInventory.RemoveItem(item.name);
                 item.GetComponent<IUsable>().Use(_agentData);
@@ -207,7 +207,7 @@ public class AgentActions : MonoBehaviour
     public void DropItem(GameObject item)
     {
             // Check we actually have it and its collectable
-            if (_agentInventory.HasItem(item.name) && item.GetComponent<Collectable>() != null)
+            if (_agentInventory.HasItem(item.name).owned && item.GetComponent<Collectable>() != null)
             {
                 // Check just in front of us that we're not dropping inside an obstacle
                 Vector3 targetPoint = gameObject.transform.position + gameObject.transform.forward;
@@ -237,7 +237,7 @@ public class AgentActions : MonoBehaviour
         // go through every key in the key list removing each item from the inventory
         foreach (var key in inventoryKeys)
         {
-            if (_agentInventory.HasItem(key))
+            if (_agentInventory.HasItem(key).owned)
             {
                 GameObject item = _agentInventory.GetItem(key);
                 DropItem(item);

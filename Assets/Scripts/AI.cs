@@ -95,9 +95,16 @@ public class AI : MonoBehaviour
     // e.g. agentScript.MoveTo(enemy);
     public AgentActions _agentActions;
 
-    
+    public struct ExecuteResult
+    {
+        public bool success;
+        public string jobTitle;
+    }
+
     public AIFSM _playerFSM;
     public string currentJob;
+    public ExecuteResult _result;
+    
     // Use this for initialization
     void Start ()
     {
@@ -114,7 +121,7 @@ public class AI : MonoBehaviour
     void Update ()
     {
         // Run your AI code in here
-        _playerFSM.FSMUpdate();
-        
+        _result = _playerFSM.FSMUpdate();
+        currentJob = _result.jobTitle;
     }
 }

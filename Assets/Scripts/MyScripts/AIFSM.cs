@@ -1,25 +1,110 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static AIFSM;
+using static BehaviourStateTemplate;
 
 public class AIFSM
 {
-    public enum e_Role
+    public enum BaseRole
     {
         Defender,
         Attacker
     }
+    public enum OverrideRole
+    {
+        None,
+        Protector,
+        Retriever
+    }
+
+    public class IgnoredObjectData
+    {
+        public GameObject gameObject;
+        public float timestampOfAcknowledge;
+
+        public IgnoredObjectData(GameObject _gameObject, float _timestampOfAcknowledge)
+        {
+            gameObject =_gameObject;
+            timestampOfAcknowledge = _timestampOfAcknowledge;
+        }
+    }
+    public class IgnoredObjectList
+    {
+        public List<IgnoredObjectData> IgnoredCollectables;
+
+        public IgnoredObjectList()
+        {
+            IgnoredCollectables = new List<IgnoredObjectData>();
+        }
+        public int Count
+        {
+            get { return IgnoredCollectables.Count; }
+        }
+
+        public void Add(GameObject target, bool RangeCap = false)
+        {
+            IgnoredCollectables.Add(new IgnoredObjectData(target, Time.time + (RangeCap ? Movement.RangeCapIgnoreDuration : Movement.IgnoreDuration)));
+        }
+
+        public void Remember(int target)
+        {
+            IgnoredCollectables.RemoveAt(target);
+        }
+        public bool Contains(GameObject go)
+        {
+            if (IgnoredCollectables.Count == 0)
+            {
+                return false;
+            }
+            foreach (var ignoredObject in IgnoredCollectables)
+            {
+                if (ignoredObject.gameObject == go)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void Update()
+        {
+            if(IgnoredCollectables.Count > 0)
+            {
+                for (int i = 0; i < IgnoredCollectables.Count; i++)
+                {
+                    if (Time.time > IgnoredCollectables[i].timestampOfAcknowledge)
+                    {
+                        Remember(i);
+                    }
+                }
+            }
+        }
+    }
 
     private AI OwnerAI = null;
 
-    public BH_MoveToRandomPositionForward b_MoveToRandomPositionForward;
-    public BH_StartState b_StartState;
+    public IgnoredObjectList _ignoredObjectList;
+
+
     private BehaviourStateTemplate CurrentState;
 
-    public e_Role role;
+    public BaseRole _baseRole;
+    public OverrideRole _overrideRole;
+
+    private AI.ExecuteResult failureState;
+
     public AIFSM(AI playerAI)
     {
         OwnerAI = playerAI;
+
+        _ignoredObjectList = new IgnoredObjectList();
+
+        _overrideRole = OverrideRole.None; // for safety, should ever be not none by default
+
+        failureState.success = false;
+        failureState.jobTitle = "No Assigned Behaviour";
+
         SetupFSM();
     }
     private void SetupFSM()
@@ -46,14 +131,14 @@ public class AIFSM
         CurrentState = null;
     }
 
-    public bool FSMUpdate()
+    public AI.ExecuteResult FSMUpdate()
     {
+        _ignoredObjectList.Update();
         if(CurrentState != null)
         {
-            CurrentState.Execute();
-            return true;
+            return CurrentState.Execute(); ;
         }
-        return false;
+        return failureState;
     }
 
     public AI GetOwnerAI()

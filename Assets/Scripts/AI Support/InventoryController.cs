@@ -15,6 +15,23 @@ public class InventoryController : MonoBehaviour
         get { return _Capacity; }
     }
 
+    public class ItemData
+    {
+        public bool owned;
+        public int quantityOwned;
+        public ItemData()
+        {
+            owned = false;
+            quantityOwned = 0;
+        }
+        public ItemData(bool own, int quant = 0)
+        {
+            owned = own;
+            quantityOwned = quant;
+        }
+    }
+
+
     // The inventory distionary. Use the GameObject name to access it in the dictionary
     private Dictionary<string, GameObject> _inventory = new Dictionary<string, GameObject>(_Capacity);
     public Dictionary<string, GameObject> Items
@@ -77,8 +94,25 @@ public class InventoryController : MonoBehaviour
     /// </summary>
     /// <param name="itemName">The string representing the tag of the item e.g. "HealthKit"</param>
     /// <returns>true if the item is in the inventory, false otherwise</returns>
-    public bool HasItem(string itemName)
+    public ItemData HasItem(string itemName)
     {
-        return _inventory.ContainsKey(itemName);
+        ItemData returnData = new ItemData();
+
+        foreach (var item in _inventory)
+        {
+            if (item.Key == itemName)
+            {
+                returnData.owned = true;
+                returnData.quantityOwned += 1;
+            }
+        }
+        return returnData;//ty bulk data
+        //return _inventory.ContainsKey(itemName);
+    }
+
+    // return inventory used slots and capacity
+    public int GetInventoryUsage()
+    {
+        return _inventory.Count;
     }
 }

@@ -7,17 +7,21 @@ public class BH_Core : BehaviourStateTemplate
 {
     // USE THIS AS JUST AN EASY C/V FOR NEW BEHAVIOURS
     // DO NOT USE AS AN ACTUAL BEHAVIOUR
+
     public BH_Core(AIFSM owner)
     {
         _aifsm = owner;
         _AI = owner.GetOwnerAI();
+
+        jobName = "UNNAMED JOB";
+        //jobName += " " + _AI._agentData.FriendlyTeam.DisplayName()
     }
 
     public override void OnEntry()
     {
         throw new System.NotImplementedException();
     }
-    public override void Execute()
+    public override AI.ExecuteResult Execute()
     {
 
         if(true == true)
@@ -27,6 +31,8 @@ public class BH_Core : BehaviourStateTemplate
             // the answer is dynamically set them
         }
         throw new System.NotImplementedException();
+        returnResult.success = true;
+        return returnResult;
     }
     public override void OnExit()
     {
