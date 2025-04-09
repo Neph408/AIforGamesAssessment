@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -11,8 +12,7 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
     public int currentPatrolPoint;
 
     public float patrolWaitTime = 3f;
-    private float timer;
-    private bool reachedTarget = false;
+
 
     private int forcedPosOnSpawn = -1;
 
@@ -43,75 +43,46 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
     public override void OnEntry()
     {
         //Debug.Log("Enter defenderpatrol");
-
-
         if (forcedPosOnSpawn != -1)
         {
-            MoveToNextTarget(forcedPosOnSpawn + Random.Range(2,4));
+            MoveToNextTarget(forcedPosOnSpawn + UnityEngine.Random.Range(0,2));
         }
         else
         {
-            MoveToNextTarget(Random.Range(0, 3));
+            MoveToNextTarget(UnityEngine.Random.Range(0, 3));
         }
-
-        _AI.StartCoroutine(UpdateVision(DetectionUpdateFrequency.DefenderPatrol));
     }
 
-    /*
-     * 
-     * ITS NOT WAITING WHN IT SHOULD
-     * IF ROLL > BAR, IT SHOULD STOP AND WAIT FOR 3s, IT DOESNT
-     * FIND OUT WHY
-     * 
-     * 
-     */
     public override AI.ExecuteResult Execute()
     {
+        UpdateVision();
         // State Change Logic
-        if (nearbyData.Collectable.exists)
+        if (nearbyData.Collectable.exists) // nearby collectable collection check, moves to BH_CollectableCollect on success
         {
             if(_AI._agentInventory.GetInventoryUsage() < _AI._agentInventory.Capacity)
             {
-                //please make a calc for this
-                //if(Random.Range(0f,1f) < (!_AI._agentInventory.HasItem(nearbyData.Collectable.TargetGameObject.name).IsOwned ? Movement.DefenderInitialCollectChance : (Movement.DefenderDoesOwnershipReduceCollectChance ? Mathf.Pow(Movement.DefenderRepeatCollectChance, _AI._agentInventory.HasItem(nearbyData.Collectable.TargetGameObject.name).QuantityOwned) : Movement.DefenderRepeatCollectChance)))
-                // i did
-                if (DecideChoice(_aifsm._baseRole, _aifsm._overrideRole, CalculatorFunction.Collectable, nearbyData.Collectable.gameObject))
+                if (DecideChoice(CalculatorFunction.Collectable, nearbyData.Collectable.gameObject))
                 {
-                    _aifsm._ignoredObjectList.Add(nearbyData.Collectable.gameObject); // wh ut. This should not be running more than once, the state change would stop that, yet it was firing like 4 times
-                    _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_DefenderPatrol(_aifsm,1), nearbyData.Collectable.gameObject));
+                    _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_DefenderPatrol(_aifsm,currentPatrolPoint), nearbyData.Collectable.gameObject));
+
+                    returnResult.success = true;
+                    return returnResult;
                 }
                 else
                 {
                     _aifsm._ignoredObjectList.Add(nearbyData.Collectable.gameObject);
                 }
             }
-        } 
-                
-         
+        }
+
+
+
+
         // Movement Logic
-        if (!reachedTarget) // move to target if not at target
+        if(MoveToPosition(patrolPoints[currentPatrolPoint], patrolWaitTime))
         {
-            _AI._agentActions.MoveTo(patrolPoints[currentPatrolPoint]);
+            MoveToNextTarget(); 
         }
-
-        if(!reachedTarget && _aifsm.GetYNegatedMagnitude(patrolPoints[currentPatrolPoint], _AI.transform.position) < Movement.Leniency) // check if just reached target, should only fire once
-        {
-            reachedTarget = true;
-            timer = patrolWaitTime;
-            returnResult.jobTitle = jobName + " at point " + currentPatrolPoint.ToString();
-        }
-
-        if(reachedTarget && timer > 0f) // lazy timer
-        {
-            timer -= Time.deltaTime;
-        }
-        
-        if(reachedTarget && timer <= 0f) // update to next patrol point
-        {
-            MoveToNextTarget();
-            reachedTarget = false;
-        }
-
 
 
         returnResult.success = true; //placeholder for now
@@ -119,8 +90,9 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
     }
     public override void OnExit()
     {
-        _AI.StopCoroutine(UpdateVision(DetectionUpdateFrequency.DefenderPatrol));
+        
     }
+
     private void MoveToNextTarget(int specificPoint = -1) // ez rotation between locations, optional specific point selection
     {
         currentPatrolPoint = ((specificPoint == -1) ? currentPatrolPoint + 1 : specificPoint) % 3;

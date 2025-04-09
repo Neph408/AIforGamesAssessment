@@ -41,7 +41,7 @@ public abstract class BehaviourStateTemplate
         public NearbyData()
         {
             Collectable = new NearbyObjectData();//big enough for the possibility to never happen of too many objs on floor
-            Enemy = new NearbyObjectData[2];
+            Enemy = new NearbyObjectData[3];
             Ally = new NearbyObjectData[2];
             Flag = new NearbyObjectData[2];
             Base = new NearbyObjectData();
@@ -74,11 +74,16 @@ public abstract class BehaviourStateTemplate
 
     public AIFSM _aifsm;
     public AI _AI;
+
     public string jobName;
+
     public AI.ExecuteResult returnResult;
     public NearbyData nearbyData;
-    //public GameKnowledgeData gameKnowledgeData;
+
     private string LogText;
+
+    private float timer;
+    private bool reachedTarget = false;
 
 
     protected List<GameObject> ObjectsInView;
@@ -90,58 +95,58 @@ public abstract class BehaviourStateTemplate
     }
 
     public abstract void OnEntry();
+
     public abstract AI.ExecuteResult Execute();
+
     public abstract void OnExit();
 
-    public virtual IEnumerator UpdateVision(float UpdateFrequency, bool OutputToLog = false)
+    public virtual void UpdateVision(bool OutputToLog = false)
     {
         AgentData.Teams selfTeam = _AI._agentData.FriendlyTeam;
 
-        while (true)
-        {
-            ObjectsInView = _AI._agentSenses.GetObjectsInView();
-            nearbyData.ClearData(); // clears to not retain outdated info
+        ObjectsInView = _AI._agentSenses.GetObjectsInView();
+        nearbyData.ClearData(); // clears to not retain outdated info
 
-            foreach (GameObject i in ObjectsInView)
+        foreach (GameObject i in ObjectsInView)
+        {
+            switch (i.tag)
             {
-                switch (i.tag)
-                {
-                    case "Blue Team":
-                        RegisterNearbyAI(selfTeam, i);
-                        break;
-                    case "Red Team":
-                        RegisterNearbyAI(selfTeam, i);
-                        break;
-                    case "Collectable":
-                        if((i.transform.position - _AI.transform.position).magnitude <= GetCollectableRangeCap())
+                case "Blue Team":
+                    RegisterNearbyAI(selfTeam, i);
+                    break;
+                case "Red Team":
+                    RegisterNearbyAI(selfTeam, i);
+                    break;
+                case "Collectable":
+                    if((i.transform.position - _AI.transform.position).magnitude <= GetCollectableRangeCap())
+                    {
+                        if (!_aifsm._ignoredObjectList.Contains(i)) // if ignored, ignore
                         {
-                            if (!_aifsm._ignoredObjectList.Contains(i)) // if ignored, ignore
-                            {
-                                nearbyData.Collectable = new NearbyObjectData(true, i);
-                            }
-                            break;
+                            nearbyData.Collectable = new NearbyObjectData(true, i);
                         }
-                        else
+                        break;
+                    }
+                    else
+                    {
+                        if(!_aifsm._ignoredObjectList.Contains(i))
                         {
-                            if(!_aifsm._ignoredObjectList.Contains(i))
-                            {
-                                _aifsm._ignoredObjectList.Add(i, true);
-                            } 
-                            break;
-                        }
-                    case "Flag":
-                        nearbyData.Flag[nearbyData.Flag[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, i);
+                            _aifsm._ignoredObjectList.Add(i, true);
+                        } 
                         break;
-                    case "Base":
-                        nearbyData.Base = new NearbyObjectData(true, i);
-                        break;
-                }
-                
-                if(OutputToLog)
-                {
-                    LogText += "Name - " + i.name + " : Distance - " + (Mathf.Round((i.transform.position - _AI.transform.position).magnitude * 10f) / 10f).ToString() + "m\n";
-                }
+                    }
+                case "Flag":
+                    nearbyData.Flag[nearbyData.Flag[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, i);
+                    break;
+                case "Base":
+                    nearbyData.Base = new NearbyObjectData(true, i);
+                    break;
             }
+                
+            if(OutputToLog)
+            {
+                LogText += "Name - " + i.name + " : Distance - " + (Mathf.Round((i.transform.position - _AI.transform.position).magnitude * 10f) / 10f).ToString() + "m\n";
+            }
+            
 
             if(OutputToLog)
             {
@@ -149,8 +154,6 @@ public abstract class BehaviourStateTemplate
                 Debug.Log(LogText);
                 LogText = "";
             }
-
-            yield return new WaitForSecondsRealtime(UpdateFrequency);
         }
     }
 
@@ -162,6 +165,7 @@ public abstract class BehaviourStateTemplate
         }
         return (_aifsm._overrideRole == AIFSM.OverrideRole.Protector) ? Movement.ProtectorPickupRangeRestriction : Movement.RetrieverPickupRangeRestriction;
     }
+
     private void RegisterNearbyAI(AgentData.Teams selfTeam, GameObject TargetAI)
     {
         if (_aifsm._ignoredObjectList.Count == 0 || _aifsm._ignoredObjectList.Contains(TargetAI))// if ignored, ignore
@@ -177,20 +181,31 @@ public abstract class BehaviourStateTemplate
         }
         else
         {
-            nearbyData.Enemy[nearbyData.Enemy[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, TargetAI);
+            nearbyData.Enemy[nearbyData.Enemy[0].IsSlotEmpty() ? 0 : (nearbyData.Enemy[1].IsSlotEmpty()) ? 1 : 2] = new NearbyObjectData(true, TargetAI);
             return;
         }
     }
-    public bool DecideChoice(AIFSM.BaseRole baseRole, AIFSM.OverrideRole overrideRole, CalculatorFunction function, GameObject Target)
-    {
-        float bar = CalculateChance(baseRole, overrideRole, function, Target);
+
+    public bool DecideChoice(CalculatorFunction function, GameObject Target)
+   {
+        float bar = CalculateChance(_aifsm._baseRole, _aifsm._overrideRole, function, Target);
         float roll = UnityEngine.Random.Range(0f, 1f);
-        Debug.Log(roll.ToString() + " " + bar.ToString());
+        Debug.Log(_AI._agentData.FriendlyTeam.ToString() + " Deciding, chose " + (roll < bar).ToString());
         return roll < bar;
     }
+
     public float CalculateChance(AIFSM.BaseRole baseRole, AIFSM.OverrideRole overrideRole, CalculatorFunction function, GameObject Target)
     {
         // I like to call this a work of arse
+
+        if (function == CalculatorFunction.Collectable)
+        { 
+            if(_AI._agentInventory.GetInventoryUsage() == _AI._agentInventory.Capacity)
+            {
+                return 0f;
+            }
+        }
+
         if(overrideRole == AIFSM.OverrideRole.None)
         {
             if(baseRole == AIFSM.BaseRole.Defender)
@@ -246,6 +261,37 @@ public abstract class BehaviourStateTemplate
             }
         }
     }
+
+    public bool MoveToPosition(GameObject targetObject, float waitAtPositionDuration)
+    {
+        return (MoveToPosition(targetObject.transform.position, waitAtPositionDuration));
+    }
+    public bool MoveToPosition(Vector3 targetLocation, float waitAtPositionDuration)
+    {
+        if (!reachedTarget) // move to target if not at target
+        {
+            _AI._agentActions.MoveTo(targetLocation);
+            timer = waitAtPositionDuration;
+        }
+
+        if (!reachedTarget && _aifsm.GetYNegatedMagnitude(targetLocation, _AI.transform.position) < Movement.Leniency) // check if just reached target, should only fire once
+        {
+            reachedTarget = true;
+        }
+
+        if (reachedTarget && timer > 0f) // lazy timer
+        {
+            timer -= Time.deltaTime;
+        }
+
+        if (reachedTarget && timer <= 0f) // return true when reached location and waited for duration
+        {
+            reachedTarget = false;
+            return true;
+        }
+        return false;
+    }
+
     public string GetName()
     {
         return jobName;
