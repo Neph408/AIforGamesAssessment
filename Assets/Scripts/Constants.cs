@@ -53,60 +53,95 @@ public static class DetectionUpdateFrequency
 }
 
 // Other Misc values for movement related stuff
-public static class Movement
+public static class AIConstants
 {
-    public const float Leniency = 0.15f; // how close "close enough" is
+    public class Global
+    {
+        // Distance leniency
+        public const float Leniency = 0.15f; // how close "close enough" is to a target
+        
+        // Ignore duration
+        public const float IgnoreDuration = 8f;
+        public const float RangeCapIgnoreDuration = 1.5f;
+    }
+    
+    public class Defender
+    {
+        // Collectable Pickup Chances
+        public const float InitialCollectChance = 0.75f; // Chance to pick up collectable if ai holds none of same type
+        public const float RepeatCollectChance = 0.5f; // Chance to pick up collectable if ai holds any of same type
+        public const bool OwnershipReducesCollectChance = true;// if false, the collection chance will always be DefenderRepeatCollectChance. If true, the collection chance will be DefenderRepeatCollectChance^HeldCount
+        public const float PickupRangeRestriction = 10f; // Ai will ignore any collectables outside of this distance
 
-    // Collectable Pickup Chances
-    public const float DefenderInitialCollectChance = 0.75f;
-    public const float DefenderRepeatCollectChance = 0.5f;
-    public const bool DefenderDoesOwnershipReduceCollectChance = true;// if false, the collection chance will always be DefenderRepeatCollectChance. If true, the collection chance will be DefenderRepeatCollectChance^HeldCount
-    public const float DefenderPickupRangeRestriction = 10f;
+        // Enemy Engagment Rates
+        public const float EngagmentChance = 1f;
 
-    //update these
-    public const float AttackerInitialCollectChance = 0.75f;
-    public const float AttackerRepeatCollectChance = 0.5f;
-    public const bool AttackerDoesOwnershipReduceCollectChance = true;
-    public const float AttackerPickupRangeRestriction = 25f;
+        // Heal Health Triggers
+        public const float HealthToHeal = 30f;
 
-    public const float RetrieverInitialCollectChance = 0.75f;
-    public const float RetrieverRepeatCollectChance = 0.5f;
-    public const bool RetrieverDoesOwnershipReduceCollectChance = true;
-    public const float RetrieverPickupRangeRestriction = 5f;
+        // Damage Boost Health Triggers - probably ignore these it may get mroe complicated, or become chance based
+        public const float HealthToBoost = 60f;
 
-    public const float ProtectorInitialCollectChance = 0.75f;
-    public const float ProtectorRepeatCollectChance = 0.5f;
-    public const bool ProtectorDoesOwnershipReduceCollectChance = true;
-    public const float ProtectorPickupRangeRestriction = 10f;
+        // Startup Ignore
+        public const float StartupIgnoreCollectableDuration = 2f;
 
-    // Enemy Engagment Rates
+    }
+    public class Attacker
+    {
+        // Collectable Pickup Chances
+        public const float InitialCollectChance = 0.75f;
+        public const float RepeatCollectChance = 0.5f;
+        public const bool OwnershipReducesCollectChance = true;
+        public const float PickupRangeRestriction = 25f;
 
-    public const float DefenderEngagmentChance = 1f;
-    public const float AttackerEngagmentChance = 1f;
-    public const float ProtectorEngagmentChance = 1f;
-    public const float RetrieverEngagmentChance = 0.1f;
+        // Enemy Engagment Rates
+        public const float EngagmentChance = 1f;
 
-    public const bool ProtectorDoesRetrieverThreatenedOverrideTarget = true;
-    public const bool ProtectorDoesRetrieverThreatenedOverrideActions = true;
+        // Heal Health Triggers
+        public const float HealthToHeal = 20f;
 
-    public const float RetrieverIgnoreAllDistance = 20f;
-    public const bool RetrieverDoesProximityToBaseDisableEngagments = true;
+        // Damage Boost Health Triggers - probably ignore these it may get mroe complicated, or become chance based
+        public const float HealthToBoost = 20f;
 
-    // Heal Health Triggers
+    }
+    public class Retriever
+    {
+        // Collectable Pickup Chances
+        public const float InitialCollectChance = 0.75f;
+        public const float RepeatCollectChance = 0.5f;
+        public const bool OwnershipReducesCollectChance = true;
+        public const float PickupRangeRestriction = 5f;
 
-    public const float DefenderHealthToHeal = 30f;
-    public const float AttackerHealthToHeal = 20f;
-    public const float ProtectorHealthToHeal = 40f;
-    public const float RetrieverHealthToHeal = 50f;
+        // Enemy Engagment Rates
+        public const float EngagmentChance = 0.1f;
+        public const float IgnoreAllDistance = 20f;
+        public const bool ProximityToBaseDisablesEngagments = true;
 
-    // Damage Boost Health Triggers - probably ignore these it may get mroe complicated, or become chance based
+        // Heal Health Triggers
+        public const float HealthToHeal = 50f;
 
-    public const float DefenderHealthToBoost = 60f;
-    public const float AttackerHealthToBoost = 20f;
-    public const float ProtectorHealthToBoost = 40f;
-    public const float RetrieverHealthToBoost = 50f;
+        // Damage Boost Health Triggers - probably ignore these it may get mroe complicated, or become chance based
+        public const float HealthToBoost = 50f;
 
-    // Ignore duration
-    public const float IgnoreDuration = 8f;
-    public const float RangeCapIgnoreDuration = 1.5f;
+    }
+    public class Protector
+    {
+        // Collectable Pickup Chances
+        public const float InitialCollectChance = 0.75f;
+        public const float RepeatCollectChance = 0.5f;
+        public const bool DoesOwnershipReduceCollectChance = true;
+        public const float PickupRangeRestriction = 10f;
+
+        // Enemy Engagment Rates
+        public const float EngagmentChance = 1f;
+        public const bool RetrieverThreatenedOverridesTarget = true;
+        public const bool RetrieverThreatenedOverridesActions = true;
+
+        // Heal Health Triggers
+        public const float HealthToHeal = 40f;
+
+        // Damage Boost Health Triggers - probably ignore these it may get mroe complicated, or become chance based
+        public const float HealthToBoost = 40f;
+
+    }
 }

@@ -23,7 +23,7 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
         jobName = "Patrolling";
         forcedPosOnSpawn = forcedPos;
         SetupPositions();
-
+        Debug.Log(_AI._agentData.FriendlyTeam.ToString() + " Roaming");
         jobName += " " + _AI._agentData.FriendlyTeam.ToString() + " Base";
 
 
@@ -35,9 +35,9 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
         patrolPoints = new Vector3[3];
 
         friendlyBasePos = _AI._agentData.FriendlyBase.transform.position;
-        patrolPoints[0] = friendlyBasePos + new Vector3(-12.5f, 0f, 0f);
+        patrolPoints[0] = friendlyBasePos + new Vector3(-12.5f * -(friendlyBasePos.z / Mathf.Abs(friendlyBasePos.z)), 0f, 0f);
         patrolPoints[1] = friendlyBasePos + new Vector3(0f, 0f, 5f * -(friendlyBasePos.z / Mathf.Abs(friendlyBasePos.z)));
-        patrolPoints[2] = friendlyBasePos + new Vector3(12.5f, 0f, 0f);
+        patrolPoints[2] = friendlyBasePos + new Vector3(12.5f * -(friendlyBasePos.z / Mathf.Abs(friendlyBasePos.z)), 0f, 0f);
     }
 
     public override void OnEntry()

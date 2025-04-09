@@ -44,7 +44,7 @@ public class AIFSM
 
         public void Add(GameObject target, bool RangeCap = false)
         {
-            IgnoredCollectables.Add(new IgnoredObjectData(target, Time.time + (RangeCap ? Movement.RangeCapIgnoreDuration : Movement.IgnoreDuration)));
+            IgnoredCollectables.Add(new IgnoredObjectData(target, Time.time + (RangeCap ? AIConstants.Global.RangeCapIgnoreDuration : AIConstants.Global.IgnoreDuration)));
         }
 
         public void Remember(int target)

@@ -118,7 +118,7 @@ public abstract class BehaviourStateTemplate
                     RegisterNearbyAI(selfTeam, i);
                     break;
                 case "Collectable":
-                    if((i.transform.position - _AI.transform.position).magnitude <= GetCollectableRangeCap())
+                    if((i.transform.position - _AI.transform.position).magnitude <= GetCollectableRangeCap() && Time.realtimeSinceStartup > AIConstants.Defender.StartupIgnoreCollectableDuration)
                     {
                         if (!_aifsm._ignoredObjectList.Contains(i)) // if ignored, ignore
                         {
@@ -161,9 +161,9 @@ public abstract class BehaviourStateTemplate
     {
         if(_aifsm._overrideRole == AIFSM.OverrideRole.None)
         {
-            return (_aifsm._baseRole == AIFSM.BaseRole.Defender) ? Movement.DefenderPickupRangeRestriction : Movement.AttackerPickupRangeRestriction;
+            return (_aifsm._baseRole == AIFSM.BaseRole.Defender) ? AIConstants.Defender.PickupRangeRestriction : AIConstants.Attacker.PickupRangeRestriction;
         }
-        return (_aifsm._overrideRole == AIFSM.OverrideRole.Protector) ? Movement.ProtectorPickupRangeRestriction : Movement.RetrieverPickupRangeRestriction;
+        return (_aifsm._overrideRole == AIFSM.OverrideRole.Protector) ? AIConstants.Protector.PickupRangeRestriction : AIConstants.Retriever.PickupRangeRestriction;
     }
 
     private void RegisterNearbyAI(AgentData.Teams selfTeam, GameObject TargetAI)
@@ -212,24 +212,24 @@ public abstract class BehaviourStateTemplate
             {
                 if(function == CalculatorFunction.Collectable)
                 {
-                    if (!_AI._agentInventory.HasItem(Target.name).owned) { return Movement.DefenderInitialCollectChance; }
-                    return Mathf.Pow(Movement.DefenderRepeatCollectChance, Movement.DefenderDoesOwnershipReduceCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
+                    if (!_AI._agentInventory.HasItem(Target.name).owned) { return AIConstants.Defender.InitialCollectChance; }
+                    return Mathf.Pow(AIConstants.Defender.RepeatCollectChance, AIConstants.Defender.OwnershipReducesCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
                 }
                 else
                 {
-                    return Movement.DefenderEngagmentChance;
+                    return AIConstants.Defender.EngagmentChance;
                 }
             }
             else // attacker
             {
                 if (function == CalculatorFunction.Collectable)
                 {
-                    if (_AI._agentInventory.HasItem(Target.name).owned) { return Movement.AttackerInitialCollectChance; }
-                    return Mathf.Pow(Movement.AttackerRepeatCollectChance, Movement.AttackerDoesOwnershipReduceCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
+                    if (_AI._agentInventory.HasItem(Target.name).owned) { return AIConstants.Attacker.InitialCollectChance; }
+                    return Mathf.Pow(AIConstants.Attacker.RepeatCollectChance, AIConstants.Attacker.OwnershipReducesCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
                 }
                 else
                 {
-                    return Movement.AttackerEngagmentChance;
+                    return AIConstants.Attacker.EngagmentChance;
                 }
             }
         }
@@ -239,24 +239,24 @@ public abstract class BehaviourStateTemplate
             {
                 if (function == CalculatorFunction.Collectable)
                 {
-                    if (_AI._agentInventory.HasItem(Target.name).owned) { return Movement.ProtectorInitialCollectChance; }
-                    return Mathf.Pow(Movement.ProtectorRepeatCollectChance, Movement.ProtectorDoesOwnershipReduceCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
+                    if (_AI._agentInventory.HasItem(Target.name).owned) { return AIConstants.Protector.InitialCollectChance; }
+                    return Mathf.Pow(AIConstants.Protector.RepeatCollectChance, AIConstants.Protector.DoesOwnershipReduceCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
                 }
                 else
                 {
-                    return Movement.ProtectorEngagmentChance;
+                    return AIConstants.Protector.EngagmentChance;
                 }
             }
             else // retriever
             {
                 if (function == CalculatorFunction.Collectable)
                 {
-                    if (_AI._agentInventory.HasItem(Target.name).owned) { return Movement.RetrieverInitialCollectChance; }
-                    return Mathf.Pow(Movement.RetrieverRepeatCollectChance, Movement.RetrieverDoesOwnershipReduceCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
+                    if (_AI._agentInventory.HasItem(Target.name).owned) { return AIConstants.Retriever.InitialCollectChance; }
+                    return Mathf.Pow(AIConstants.Retriever.RepeatCollectChance, AIConstants.Retriever.OwnershipReducesCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
                 }
                 else
                 {
-                    return Movement.RetrieverEngagmentChance;
+                    return AIConstants.Retriever.EngagmentChance;
                 }
             }
         }
@@ -274,7 +274,7 @@ public abstract class BehaviourStateTemplate
             timer = waitAtPositionDuration;
         }
 
-        if (!reachedTarget && _aifsm.GetYNegatedMagnitude(targetLocation, _AI.transform.position) < Movement.Leniency) // check if just reached target, should only fire once
+        if (!reachedTarget && _aifsm.GetYNegatedMagnitude(targetLocation, _AI.transform.position) < AIConstants.Global.Leniency) // check if just reached target, should only fire once
         {
             reachedTarget = true;
         }
