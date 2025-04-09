@@ -64,7 +64,6 @@ public static class AIConstants
         public const float IgnoreDuration = 8f;
         public const float RangeCapIgnoreDuration = 1.5f;
     }
-    
     public class Defender
     {
         // Collectable Pickup Chances
