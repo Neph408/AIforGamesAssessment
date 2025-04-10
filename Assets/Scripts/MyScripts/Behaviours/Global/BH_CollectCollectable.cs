@@ -29,17 +29,12 @@ public class BH_CollectCollectable : BehaviourStateTemplate
     {
         UpdateVision();
 
-        if(true == true)
-        {
-            //_aifsm.SetCurrentState(new b_Core)
-            // figure out how to call correct behaviour
-            // the answer is dynamically set them
-        }
-
         if (IntendedCollectable == null)
         {
             _aifsm.SetCurrentState(ReturnState);
         }
+
+
 
         if (MoveToPosition(IntendedCollectable, 0f))
         {
@@ -47,11 +42,15 @@ public class BH_CollectCollectable : BehaviourStateTemplate
             {
                 _AI._agentActions.CollectItem(IntendedCollectable);
             }
+            if (IntendedCollectable.name == "Blue Flag" || IntendedCollectable.name == "Red Flag")
+            {
+                _aifsm._overrideRole = AIFSM.OverrideRole.Retriever;
+            }
             _aifsm.SetCurrentState(ReturnState);
+            return GenerateResult(true);
         }
 
-        returnResult.success = true;
-        return returnResult;
+        return GenerateResult(true);
     }
     public override void OnExit()
     {

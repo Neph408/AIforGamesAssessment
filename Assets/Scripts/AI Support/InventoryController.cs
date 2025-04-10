@@ -93,7 +93,7 @@ public class InventoryController : MonoBehaviour
     /// Checks if an item is stored in the inventory
     /// </summary>
     /// <param name="itemName">The string representing the tag of the item e.g. "HealthKit"</param>
-    /// <returns>true if the item is in the inventory, false otherwise</returns>
+    /// <returns>ItemData object containing whether object exists and quantity</returns>
     public ItemData HasItem(string itemName)
     {
         ItemData returnData = new ItemData();

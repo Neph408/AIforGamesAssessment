@@ -23,7 +23,7 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
         jobName = "Patrolling";
         forcedPosOnSpawn = forcedPos;
         SetupPositions();
-        Debug.Log(_AI._agentData.FriendlyTeam.ToString() + " Roaming");
+        Debug.Log(_AI.gameObject.name + " Patrolling");
         jobName += " " + _AI._agentData.FriendlyTeam.ToString() + " Base";
 
 
@@ -57,6 +57,14 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
     {
         UpdateVision();
         // State Change Logic
+        if (nearbyData.nearbyFlagCount > 0)
+        {
+            _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_DefenderPatrol(_aifsm), GetFlagByPriority()));
+        }
+       if (nearbyData.nearbyEnemyCount > 0)
+        {
+            _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, GetFlagHolderIfPresent(), new BH_DefenderPatrol(_aifsm, currentPatrolPoint)));
+        }
         if (nearbyData.Collectable.exists) // nearby collectable collection check, moves to BH_CollectableCollect on success
         {
             if(_AI._agentInventory.GetInventoryUsage() < _AI._agentInventory.Capacity)
@@ -65,8 +73,7 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
                 {
                     _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_DefenderPatrol(_aifsm,currentPatrolPoint), nearbyData.Collectable.gameObject));
 
-                    returnResult.success = true;
-                    return returnResult;
+                    return GenerateResult(true);
                 }
                 else
                 {
@@ -85,8 +92,7 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
         }
 
 
-        returnResult.success = true; //placeholder for now
-        return returnResult; // return data to AI
+        return GenerateResult(true); // return data to AI
     }
     public override void OnExit()
     {
@@ -96,7 +102,7 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
     private void MoveToNextTarget(int specificPoint = -1) // ez rotation between locations, optional specific point selection
     {
         currentPatrolPoint = ((specificPoint == -1) ? currentPatrolPoint + 1 : specificPoint) % 3;
-        returnResult.jobTitle = jobName + " to point " + currentPatrolPoint.ToString();
+        jobName = jobName + " to point " + currentPatrolPoint.ToString();
     }
 
 }

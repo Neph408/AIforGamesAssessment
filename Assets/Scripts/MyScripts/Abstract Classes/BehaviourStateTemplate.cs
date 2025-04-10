@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
+using TMPro.EditorUtilities;
 using UnityEngine;
 using static UnityEngine.GraphicsBuffer;
 
@@ -38,6 +39,10 @@ public abstract class BehaviourStateTemplate
         public NearbyObjectData[] Flag;
         public NearbyObjectData Base;
 
+        public int nearbyEnemyCount;
+        public int nearbyAllyCount;
+        public int nearbyFlagCount;
+
         public NearbyData()
         {
             Collectable = new NearbyObjectData();//big enough for the possibility to never happen of too many objs on floor
@@ -45,6 +50,9 @@ public abstract class BehaviourStateTemplate
             Ally = new NearbyObjectData[2];
             Flag = new NearbyObjectData[2];
             Base = new NearbyObjectData();
+            nearbyAllyCount = 0;
+            nearbyFlagCount = 0;
+            nearbyEnemyCount = 0;
         }
 
         public void ClearData()
@@ -57,6 +65,9 @@ public abstract class BehaviourStateTemplate
             Flag[0] = new NearbyObjectData();
             Flag[1] = new NearbyObjectData();
             Base = new NearbyObjectData();
+            nearbyAllyCount = 0;
+            nearbyFlagCount = 0;
+            nearbyEnemyCount = 0;
         }
     }
     public struct GameKnowledgeData
@@ -76,6 +87,7 @@ public abstract class BehaviourStateTemplate
     public AI _AI;
 
     public string jobName;
+
 
     public AI.ExecuteResult returnResult;
     public NearbyData nearbyData;
@@ -107,6 +119,7 @@ public abstract class BehaviourStateTemplate
         ObjectsInView = _AI._agentSenses.GetObjectsInView();
         nearbyData.ClearData(); // clears to not retain outdated info
 
+
         foreach (GameObject i in ObjectsInView)
         {
             switch (i.tag)
@@ -135,7 +148,11 @@ public abstract class BehaviourStateTemplate
                         break;
                     }
                 case "Flag":
-                    nearbyData.Flag[nearbyData.Flag[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, i);
+                    if (!IsSelfFlagAtOwnBase(i))
+                    {
+                        nearbyData.Flag[nearbyData.Flag[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, i);
+                        nearbyData.nearbyFlagCount++;
+                    }
                     break;
                 case "Base":
                     nearbyData.Base = new NearbyObjectData(true, i);
@@ -157,6 +174,18 @@ public abstract class BehaviourStateTemplate
         }
     }
 
+    private bool IsSelfFlagAtOwnBase(GameObject val)
+    {
+        if(FlagNameToTeam(val.name) == _AI._agentData.FriendlyTeam)
+        {
+            float dis = Mathf.Abs((_AI._agentData.FriendlyBase.transform.position - val.transform.position).magnitude);
+            if (dis < 3f)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
     public float GetCollectableRangeCap()
     {
         if(_aifsm._overrideRole == AIFSM.OverrideRole.None)
@@ -165,7 +194,6 @@ public abstract class BehaviourStateTemplate
         }
         return (_aifsm._overrideRole == AIFSM.OverrideRole.Protector) ? AIConstants.Protector.PickupRangeRestriction : AIConstants.Retriever.PickupRangeRestriction;
     }
-
     private void RegisterNearbyAI(AgentData.Teams selfTeam, GameObject TargetAI)
     {
         if (_aifsm._ignoredObjectList.Count == 0 || _aifsm._ignoredObjectList.Contains(TargetAI))// if ignored, ignore
@@ -177,15 +205,16 @@ public abstract class BehaviourStateTemplate
         {
 
             nearbyData.Ally[nearbyData.Ally[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, TargetAI);
+            nearbyData.nearbyAllyCount++;
             return;
         }
         else
         {
             nearbyData.Enemy[nearbyData.Enemy[0].IsSlotEmpty() ? 0 : (nearbyData.Enemy[1].IsSlotEmpty()) ? 1 : 2] = new NearbyObjectData(true, TargetAI);
+            nearbyData.nearbyEnemyCount++;
             return;
         }
     }
-
     public bool DecideChoice(CalculatorFunction function, GameObject Target)
    {
         float bar = CalculateChance(_aifsm._baseRole, _aifsm._overrideRole, function, Target);
@@ -193,7 +222,6 @@ public abstract class BehaviourStateTemplate
         Debug.Log(_AI._agentData.FriendlyTeam.ToString() + " Deciding, chose " + (roll < bar).ToString());
         return roll < bar;
     }
-
     public float CalculateChance(AIFSM.BaseRole baseRole, AIFSM.OverrideRole overrideRole, CalculatorFunction function, GameObject Target)
     {
         // I like to call this a work of arse
@@ -261,7 +289,6 @@ public abstract class BehaviourStateTemplate
             }
         }
     }
-
     public bool MoveToPosition(GameObject targetObject, float waitAtPositionDuration)
     {
         return (MoveToPosition(targetObject.transform.position, waitAtPositionDuration));
@@ -291,9 +318,78 @@ public abstract class BehaviourStateTemplate
         }
         return false;
     }
-
+    public AI.ExecuteResult GenerateResult(bool success)
+    {
+        returnResult.success = success;
+        returnResult.jobTitle = jobName;
+        return  returnResult;
+    }
     public string GetName()
     {
         return jobName;
+    }
+    protected GameObject GetFlagByPriority()
+    {
+        string selfFlag = (_AI._agentData.FriendlyTeam == AgentData.Teams.BlueTeam) ? "Blue Flag" : "Red Flag";
+        string enemyFlag = (_AI._agentData.FriendlyTeam == AgentData.Teams.BlueTeam) ? "Red Flag" : "Blue Flag";
+        // prioritises Own Flag > Enemy Flag
+        int newTarget = 0;
+
+        for (int i = 0; i < nearbyData.nearbyFlagCount; i++)
+        {
+            if (nearbyData.Flag[i].gameObject.name == selfFlag)
+            {
+                return nearbyData.Flag[i].gameObject;
+            }
+            else
+            {
+                newTarget = i;
+            }
+        }
+
+        return nearbyData.Flag[newTarget].gameObject;
+    }
+    protected GameObject GetFlagHolderIfPresent() // exists to prioritise nearby enemies by whether they have the flag or not
+    {
+        string selfFlag = (_AI._agentData.FriendlyTeam == AgentData.Teams.BlueTeam) ? "Blue Flag" : "Red Flag";
+        string enemyFlag = (_AI._agentData.FriendlyTeam == AgentData.Teams.BlueTeam) ? "Red Flag" : "Blue Flag";
+        // prioritises Own Flag > Enemy Flag > No Flag
+
+        int newTarget = 0; // default selection is first in list, if this method has been called, 0 is always occupied
+        for (int i = 0; i < nearbyData.nearbyEnemyCount; i++)
+        {
+            if (nearbyData.Enemy[i].gameObject.GetComponent<InventoryController>().HasItem(selfFlag).owned) // if holding own teams flag
+            {
+                return nearbyData.Enemy[i].gameObject; // immediate return, no point in checking anythig else
+            }
+            else if (nearbyData.Enemy[i].gameObject.GetComponent<InventoryController>().HasItem(enemyFlag).owned) // if holding enemy teams flag
+            {
+                newTarget = i; // override default selection to holder of enemy flag, but still checks rest of list
+            }
+        }
+        return nearbyData.Enemy[newTarget].gameObject; // returns enemy flag holder if found, slot 0 if not
+    }
+    protected string TeamToFlagName(AgentData.Teams val)
+    {
+        if (val == AgentData.Teams.BlueTeam)
+        {
+            return "Blue Flag";
+        }
+        else
+        {
+            return "Red Flag";
+        }
+    }
+    protected AgentData.Teams FlagNameToTeam(string val)
+    {
+        if(val == "Blue Flag")
+        {
+            return AgentData.Teams.BlueTeam;
+        }
+        if(val == "Red Flag")
+        {
+            return AgentData.Teams.RedTeam;
+        }
+        throw new Exception(val + " is an invalid flag name");
     }
 }

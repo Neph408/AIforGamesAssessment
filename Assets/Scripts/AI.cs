@@ -114,7 +114,7 @@ public class AI : MonoBehaviour
         _agentSenses = GetComponentInChildren<Sensing>();
         _agentInventory = GetComponentInChildren<InventoryController>();
         _playerFSM = new AIFSM(this);
-
+        Debug.Log(_playerFSM.ToString());
     }
 
     // Update is called once per frame
