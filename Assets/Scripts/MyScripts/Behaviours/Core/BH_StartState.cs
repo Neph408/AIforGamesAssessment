@@ -30,7 +30,7 @@ public class BH_StartState : BehaviourStateTemplate
     {
         if(_aifsm._baseRole == AIFSM.BaseRole.Attacker)
         {
-            //_aifsm.SetCurrentState(new BH_AttackerRoam(_aifsm));
+            _aifsm.SetCurrentState(new BH_AttackerRoam(_aifsm));
         }
         else if(_aifsm._baseRole == AIFSM.BaseRole.Defender)
         {

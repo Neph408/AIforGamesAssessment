@@ -63,7 +63,7 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
         }
        if (nearbyData.nearbyEnemyCount > 0)
         {
-            _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, GetFlagHolderIfPresent(), new BH_DefenderPatrol(_aifsm, currentPatrolPoint)));
+            _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, new BH_DefenderPatrol(_aifsm, currentPatrolPoint), GetFlagHolderIfPresent()));
         }
         if (nearbyData.Collectable.exists) // nearby collectable collection check, moves to BH_CollectableCollect on success
         {
@@ -72,12 +72,10 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
                 if (DecideChoice(CalculatorFunction.Collectable, nearbyData.Collectable.gameObject))
                 {
                     _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_DefenderPatrol(_aifsm,currentPatrolPoint), nearbyData.Collectable.gameObject));
-
-                    return GenerateResult(true);
                 }
                 else
                 {
-                    _aifsm._ignoredObjectList.Add(nearbyData.Collectable.gameObject);
+                    _aifsm._ignoredObjectList.Add(nearbyData.Collectable.gameObject, AIConstants.Global.IgnoreCollectableDuration);
                 }
             }
         }
@@ -103,6 +101,15 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
     {
         currentPatrolPoint = ((specificPoint == -1) ? currentPatrolPoint + 1 : specificPoint) % 3;
         jobName = jobName + " to point " + currentPatrolPoint.ToString();
+    }
+
+    public override void HasTakenDamage()
+    {
+        base.HasTakenDamage();
+        if (nearbyData.nearbyEnemyCount > 0)
+        {
+            _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, new BH_DefenderPatrol(_aifsm, currentPatrolPoint), GetFlagHolderIfPresent()));
+        }
     }
 
 }

@@ -61,8 +61,9 @@ public static class AIConstants
         public const float Leniency = 0.15f; // how close "close enough" is to a target
         
         // Ignore duration
-        public const float IgnoreDuration = 8f;
-        public const float RangeCapIgnoreDuration = 1.5f;
+        public const float IgnoreCollectableDuration = 8f; // ignore collectable if decided to not pick it up
+        public const float IgnoreCollectableOutsideRangeCapDuration = 1.5f; // ignore collectable if outside of pcikup range
+        public const float IgnoreEnemyDuration = 1f; // ignore enemy not in range
     }
     public class Defender
     {
@@ -74,6 +75,7 @@ public static class AIConstants
 
         // Enemy Engagment Rates
         public const float EngagmentChance = 1f;
+        public const float EngagementRangeRestriction = 15f;
 
         // Heal Health Triggers
         public const float HealthToHeal = 30f;

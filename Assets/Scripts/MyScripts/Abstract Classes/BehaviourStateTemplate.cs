@@ -143,7 +143,7 @@ public abstract class BehaviourStateTemplate
                     {
                         if(!_aifsm._ignoredObjectList.Contains(i))
                         {
-                            _aifsm._ignoredObjectList.Add(i, true);
+                            _aifsm._ignoredObjectList.Add(i, AIConstants.Global.IgnoreCollectableOutsideRangeCapDuration);
                         } 
                         break;
                     }
@@ -210,6 +210,14 @@ public abstract class BehaviourStateTemplate
         }
         else
         {
+            if (_aifsm._baseRole == AIFSM.BaseRole.Defender && _aifsm._overrideRole == AIFSM.OverrideRole.None)
+            {
+                if (GetYNegatedMagnitude(TargetAI, _AI._agentData.FriendlyBase) > AIConstants.Defender.EngagementRangeRestriction) 
+                {
+                    _aifsm._ignoredObjectList.Add(TargetAI, AIConstants.Global.IgnoreEnemyDuration);
+                    return;
+                } 
+            }
             nearbyData.Enemy[nearbyData.Enemy[0].IsSlotEmpty() ? 0 : (nearbyData.Enemy[1].IsSlotEmpty()) ? 1 : 2] = new NearbyObjectData(true, TargetAI);
             nearbyData.nearbyEnemyCount++;
             return;
@@ -295,13 +303,19 @@ public abstract class BehaviourStateTemplate
     }
     public bool MoveToPosition(Vector3 targetLocation, float waitAtPositionDuration)
     {
+        if(nearbyData.nearbyEnemyCount > 0)
+        {
+            reachedTarget = true;
+            timer = 0f;
+        }
+
         if (!reachedTarget) // move to target if not at target
         {
             _AI._agentActions.MoveTo(targetLocation);
             timer = waitAtPositionDuration;
         }
 
-        if (!reachedTarget && _aifsm.GetYNegatedMagnitude(targetLocation, _AI.transform.position) < AIConstants.Global.Leniency) // check if just reached target, should only fire once
+        if (!reachedTarget && GetYNegatedMagnitude(targetLocation, _AI.transform.position) < AIConstants.Global.Leniency) // check if just reached target, should only fire once
         {
             reachedTarget = true;
         }
@@ -358,11 +372,11 @@ public abstract class BehaviourStateTemplate
         int newTarget = 0; // default selection is first in list, if this method has been called, 0 is always occupied
         for (int i = 0; i < nearbyData.nearbyEnemyCount; i++)
         {
-            if (nearbyData.Enemy[i].gameObject.GetComponent<InventoryController>().HasItem(selfFlag).owned) // if holding own teams flag
+            if (nearbyData.Enemy[i].gameObject.GetComponent<AI>()._agentInventory.HasItem(selfFlag).owned) // if holding own teams flag
             {
                 return nearbyData.Enemy[i].gameObject; // immediate return, no point in checking anythig else
             }
-            else if (nearbyData.Enemy[i].gameObject.GetComponent<InventoryController>().HasItem(enemyFlag).owned) // if holding enemy teams flag
+            else if (nearbyData.Enemy[i].gameObject.GetComponent<AI>()._agentInventory.HasItem(enemyFlag).owned) // if holding enemy teams flag
             {
                 newTarget = i; // override default selection to holder of enemy flag, but still checks rest of list
             }
@@ -391,5 +405,39 @@ public abstract class BehaviourStateTemplate
             return AgentData.Teams.RedTeam;
         }
         throw new Exception(val + " is an invalid flag name");
+    }
+    public float GetYNegatedMagnitude(Vector3 Target, Vector3 CurrentPosition) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
+    {
+        Target.y = 0;
+        CurrentPosition.y = 0;
+        return (Target - CurrentPosition).magnitude;
+    }
+    public float GetYNegatedMagnitude(GameObject TargetObject, Vector3 CurrentPosition) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
+    {
+        Vector3 TargetPos = TargetObject.transform.position;
+        TargetPos.y = 0;
+        CurrentPosition.y = 0;
+        return (TargetPos - CurrentPosition).magnitude;
+    }
+    public float GetYNegatedMagnitude(GameObject TargetObject, GameObject OtherObject) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
+    {
+        Vector3 TargetPos = TargetObject.transform.position;
+        Vector3 OtherPos = OtherObject.transform.position;
+        TargetPos.y = 0;
+        OtherPos.y = 0;
+        return (TargetPos - OtherPos).magnitude;
+    }
+    public float GetYNegatedMagnitude(GameObject TargetObject) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
+    {
+        Vector3 TargetPos = TargetObject.transform.position;
+        Vector3 CurrPos = _AI.transform.position;
+        TargetPos.y = 0;
+        CurrPos.y = 0;
+        return (TargetPos - CurrPos).magnitude;
+    }
+    
+    public virtual void HasTakenDamage()
+    {
+        UpdateVision();
     }
 }

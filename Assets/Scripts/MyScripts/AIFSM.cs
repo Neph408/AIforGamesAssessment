@@ -42,9 +42,9 @@ public class AIFSM
             get { return IgnoredCollectables.Count; }
         }
 
-        public void Add(GameObject target, bool RangeCap = false)
+        public void Add(GameObject target, float duration)
         {
-            IgnoredCollectables.Add(new IgnoredObjectData(target, Time.time + (RangeCap ? AIConstants.Global.RangeCapIgnoreDuration : AIConstants.Global.IgnoreDuration)));
+            IgnoredCollectables.Add(new IgnoredObjectData(target, Time.time + duration));
         }
 
         public void Remember(int target)
@@ -112,6 +112,11 @@ public class AIFSM
         SetCurrentState(new BH_StartState(this));
     }
 
+    public bool HasCurrentState()
+    {
+        return CurrentState != null;
+    }
+
     public BehaviourStateTemplate GetCurrentState()
     {
         return CurrentState;
@@ -144,12 +149,5 @@ public class AIFSM
     public AI GetOwnerAI()
     {
         return OwnerAI;
-    }
-
-    public float GetYNegatedMagnitude(Vector3 Target, Vector3 CurrentPosition) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
-    {
-        Target.y = 0;
-        CurrentPosition.y = 0;
-        return (Target - CurrentPosition).magnitude;
     }
 }

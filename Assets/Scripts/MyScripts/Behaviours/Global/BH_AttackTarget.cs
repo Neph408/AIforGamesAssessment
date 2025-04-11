@@ -5,16 +5,19 @@ using UnityEngine;
 
 public class BH_AttackTarget : BehaviourStateTemplate
 {
-    // USE THIS AS JUST AN EASY C/V FOR NEW BEHAVIOURS
-    // DO NOT USE AS AN ACTUAL BEHAVIOUR
+    private GameObject TargetObject;
+    private BehaviourStateTemplate ReturnState;
 
-    public BH_AttackTarget(AIFSM owner, GameObject Target, BehaviourStateTemplate _ReturnState)
+    public BH_AttackTarget(AIFSM owner, BehaviourStateTemplate _ReturnState, GameObject _Target)
     {
         _aifsm = owner;
         _AI = owner.GetOwnerAI();
 
-        jobName = "UNNAMED JOB";
-        //jobName += " " + _AI._agentData.FriendlyTeam.DisplayName()
+        ReturnState = _ReturnState;
+        TargetObject = _Target;
+
+        jobName = "Attacking";
+        jobName += " " + TargetObject.name;
     }
 
     public override void OnEntry()
@@ -24,18 +27,36 @@ public class BH_AttackTarget : BehaviourStateTemplate
     public override AI.ExecuteResult Execute()
     {
         UpdateVision();
-        if(true == true)
+
+        if (TargetObject == null)
         {
-            //_aifsm.SetCurrentState(new b_Core)
-            // figure out how to call correct behaviour
-            // the answer is dynamically set them
+            _aifsm.SetCurrentState(ReturnState);
         }
-        throw new System.NotImplementedException();
+
+        if (GetYNegatedMagnitude(TargetObject) > _AI._agentData.AttackRange)
+        {
+            _AI._agentActions.MoveTo(TargetObject);
+
+        }
+        else
+        {
+            _AI._agentActions.Stop();
+            _AI._agentActions.AttackEnemy(TargetObject);
+        }
+
+
         returnResult.success = true;
         return returnResult;
     }
     public override void OnExit()
     {
-        throw new System.NotImplementedException();
+    }
+
+    public Vector3 GetApproxDistance()
+    {
+        Vector3 targetpos = TargetObject.transform.position;
+        float distToAvoid = 0.5f;
+        Vector3 vectorToTarget = (targetpos - _AI.gameObject.transform.position).normalized;
+        return targetpos - (vectorToTarget * distToAvoid);
     }
 }
