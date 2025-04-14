@@ -26,7 +26,6 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
         Debug.Log(_AI.gameObject.name + " Patrolling");
         jobName += " " + _AI._agentData.FriendlyTeam.ToString() + " Base";
 
-
     }
     private void SetupPositions()
     {
@@ -69,13 +68,13 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
         {
             if(_AI._agentInventory.GetInventoryUsage() < _AI._agentInventory.Capacity)
             {
-                if (DecideChoice(CalculatorFunction.Collectable, nearbyData.Collectable.gameObject))
+                if (DecideChoice(CalculatorFunction.Collectable, nearbyData.Collectable.targetGameObject))
                 {
-                    _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_DefenderPatrol(_aifsm,currentPatrolPoint), nearbyData.Collectable.gameObject));
+                    _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_DefenderPatrol(_aifsm,currentPatrolPoint), nearbyData.Collectable.targetGameObject));
                 }
                 else
                 {
-                    _aifsm._ignoredObjectList.Add(nearbyData.Collectable.gameObject, AIConstants.Global.IgnoreCollectableDuration);
+                    _aifsm._ignoredObjectList.Add(nearbyData.Collectable.targetGameObject, AIConstants.Global.IgnoreCollectableDuration);
                 }
             }
         }

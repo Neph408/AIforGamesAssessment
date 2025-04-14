@@ -177,7 +177,7 @@ public class AgentData : MonoBehaviour
     {
         _aiMood = AiMood.Dead;
         AgentActions actions = gameObject.GetComponent<AgentActions>();
-
+        DebugOverlayHandler.DOH.SetSlotText(gameObject.name, "DEAD");
         actions.DropAllItems();
         Destroy(gameObject);
     }

@@ -38,6 +38,6 @@ public abstract class Collectable : MonoBehaviour
 
         gameObject.GetComponent<BoxCollider>().enabled = true;
         gameObject.GetComponent<MeshRenderer>().enabled = true;
-        gameObject.layer = LayerMask.NameToLayer("VisibleToAI");
+        gameObject.layer = LayerMask.NameToLayer("VisibleToAi");
     }
 }

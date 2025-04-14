@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class BH_AttackTarget : BehaviourStateTemplate
@@ -28,22 +30,20 @@ public class BH_AttackTarget : BehaviourStateTemplate
     {
         UpdateVision();
 
-        if (TargetObject == null)
-        {
-            _aifsm.SetCurrentState(ReturnState);
-        }
-
         if (GetYNegatedMagnitude(TargetObject) > _AI._agentData.AttackRange)
         {
             _AI._agentActions.MoveTo(TargetObject);
-
         }
-        else
+        else if(TargetObject != null)
         {
             _AI._agentActions.Stop();
             _AI._agentActions.AttackEnemy(TargetObject);
         }
 
+        if (TargetObject == null)
+        {
+            _aifsm.SetCurrentState(ReturnState);
+        }
 
         returnResult.success = true;
         return returnResult;

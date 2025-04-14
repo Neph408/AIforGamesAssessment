@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using Palmmedia.ReportGenerator.Core.Reporting.Builders;
 using System;
 using System.Collections;
@@ -8,75 +9,13 @@ using UnityEngine;
 using static UnityEngine.GraphicsBuffer;
 
 public abstract class BehaviourStateTemplate
-{
-    public class NearbyObjectData
-    {
-        public bool exists = false;
-        public GameObject gameObject = null;
-
-        public NearbyObjectData()
-        {
-            exists = false;
-            gameObject = null;
-        }
-        public NearbyObjectData(bool isExists, GameObject targetGameObject)
-        {
-            exists = isExists;
-            gameObject = targetGameObject;
-        }
-
-        public bool IsSlotEmpty()
-        {
-            if (gameObject == null) return true; // if it aint got a reference, there aint anything to talk about
-            return false;
-        }
-    }
-    public class NearbyData
-    {
-        public NearbyObjectData Collectable;
-        public NearbyObjectData[] Enemy;
-        public NearbyObjectData[] Ally;
-        public NearbyObjectData[] Flag;
-        public NearbyObjectData Base;
-
-        public int nearbyEnemyCount;
-        public int nearbyAllyCount;
-        public int nearbyFlagCount;
-
-        public NearbyData()
-        {
-            Collectable = new NearbyObjectData();//big enough for the possibility to never happen of too many objs on floor
-            Enemy = new NearbyObjectData[3];
-            Ally = new NearbyObjectData[2];
-            Flag = new NearbyObjectData[2];
-            Base = new NearbyObjectData();
-            nearbyAllyCount = 0;
-            nearbyFlagCount = 0;
-            nearbyEnemyCount = 0;
-        }
-
-        public void ClearData()
-        {
-            Collectable = new NearbyObjectData();
-            Ally[0] = new NearbyObjectData();
-            Ally[1] = new NearbyObjectData();
-            Enemy[0] = new NearbyObjectData();
-            Enemy[1] = new NearbyObjectData();
-            Flag[0] = new NearbyObjectData();
-            Flag[1] = new NearbyObjectData();
-            Base = new NearbyObjectData();
-            nearbyAllyCount = 0;
-            nearbyFlagCount = 0;
-            nearbyEnemyCount = 0;
-        }
-    }
+{   
     public struct GameKnowledgeData
     {
         public bool IsAllyFlagNotAtBase;
         public bool IsEnemyFlagNotAtBase;
 
     }
-
     public enum CalculatorFunction
     {
         Collectable,
@@ -85,9 +24,10 @@ public abstract class BehaviourStateTemplate
 
     public AIFSM _aifsm;
     public AI _AI;
-
+    
     public string jobName;
 
+    protected DebugOverlayHandler doh;
 
     public AI.ExecuteResult returnResult;
     public NearbyData nearbyData;
@@ -97,13 +37,13 @@ public abstract class BehaviourStateTemplate
     private float timer;
     private bool reachedTarget = false;
 
-
     protected List<GameObject> ObjectsInView;
 
     public BehaviourStateTemplate()
     {
         nearbyData = new NearbyData();
         nearbyData.ClearData();
+        doh = DebugOverlayHandler.DOH;
     }
 
     public abstract void OnEntry();
@@ -112,7 +52,7 @@ public abstract class BehaviourStateTemplate
 
     public abstract void OnExit();
 
-    public virtual void UpdateVision(bool OutputToLog = false)
+    public virtual void UpdateVision(bool OutputToLog = true)
     {
         AgentData.Teams selfTeam = _AI._agentData.FriendlyTeam;
 
@@ -131,46 +71,51 @@ public abstract class BehaviourStateTemplate
                     RegisterNearbyAI(selfTeam, i);
                     break;
                 case "Collectable":
-                    if((i.transform.position - _AI.transform.position).magnitude <= GetCollectableRangeCap() && Time.realtimeSinceStartup > AIConstants.Defender.StartupIgnoreCollectableDuration)
+                    if (i.transform.parent == null)
                     {
-                        if (!_aifsm._ignoredObjectList.Contains(i)) // if ignored, ignore
+                        if ((i.transform.position - _AI.transform.position).magnitude <= GetCollectableRangeCap() && Time.realtimeSinceStartup > AIConstants.Defender.StartupIgnoreCollectableDuration)
                         {
-                            nearbyData.Collectable = new NearbyObjectData(true, i);
+                            if (!_aifsm._ignoredObjectList.Contains(i)) // if ignored, ignore
+                            {
+                                nearbyData.Collectable = new NearbyObjectData(true, i);
+                            }
+                            break;
                         }
-                        break;
-                    }
-                    else
-                    {
-                        if(!_aifsm._ignoredObjectList.Contains(i))
+                        else
                         {
-                            _aifsm._ignoredObjectList.Add(i, AIConstants.Global.IgnoreCollectableOutsideRangeCapDuration);
-                        } 
-                        break;
+                            if (!_aifsm._ignoredObjectList.Contains(i))
+                            {
+                                _aifsm._ignoredObjectList.Add(i, AIConstants.Global.IgnoreCollectableOutsideRangeCapDuration);
+                            }
+                            break;
+                        }
                     }
+                    break;
                 case "Flag":
                     if (!IsSelfFlagAtOwnBase(i))
                     {
-                        nearbyData.Flag[nearbyData.Flag[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, i);
-                        nearbyData.nearbyFlagCount++;
+                        if (i.transform.parent == null)
+                        {
+                            nearbyData.Flag[nearbyData.Flag[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, i);
+                            nearbyData.nearbyFlagCount += 1;
+                        }
                     }
                     break;
                 case "Base":
                     nearbyData.Base = new NearbyObjectData(true, i);
                     break;
             }
-                
-            if(OutputToLog)
-            {
-                LogText += "Name - " + i.name + " : Distance - " + (Mathf.Round((i.transform.position - _AI.transform.position).magnitude * 10f) / 10f).ToString() + "m\n";
-            }
-            
 
-            if(OutputToLog)
-            {
-                LogText = _AI._agentData.FriendlyTeam.ToString() + " Team Defender - Current Nearby Object Count : " + ObjectsInView.Count.ToString() + "\n" + LogText;
-                Debug.Log(LogText);
-                LogText = "";
-            }
+
+            LogText = _AI.gameObject.name.ToString() + " - Current Nearby Object Count : " + ObjectsInView.Count.ToString() + "\n"
+            + nearbyData.nearbyEnemyCount.ToString() + " Enemies | " + nearbyData.nearbyFlagCount.ToString() + " Flags | " + nearbyData.nearbyAllyCount.ToString() + " Nearby Allies" + "\n"
+            + "Nearby Data : \n" 
+            + nearbyData.GetDataAsString() + "\n"
+            + "Ignore List ("+_aifsm._ignoredObjectList.Count+") : \n"
+            + _aifsm._ignoredObjectList.GetDataAsString();
+            doh.SetSlotText(_AI.gameObject.name, LogText, _AI.AICol);
+            LogText = "";
+            
         }
     }
 
@@ -196,7 +141,7 @@ public abstract class BehaviourStateTemplate
     }
     private void RegisterNearbyAI(AgentData.Teams selfTeam, GameObject TargetAI)
     {
-        if (_aifsm._ignoredObjectList.Count == 0 || _aifsm._ignoredObjectList.Contains(TargetAI))// if ignored, ignore
+        if (_aifsm._ignoredObjectList.Contains(TargetAI))// if ignored, ignore  FOR THE LONGEST FUCKING TIME THERE WAS A IF (IGNORELIST == 0 || IGNORELIST.CONTAINS TARGET) HERE AND I DONT KNOW WHY AND IT CAUSED ME HOURS OF PAIN WHAT THE FUCK IS WRONG WITH ME LIKE HOLY FUCK IT MADE ERVYTHING EB IGNORED OIF THE IGNORE LIST AS EMPTY
         {
             return;
         }
@@ -205,7 +150,7 @@ public abstract class BehaviourStateTemplate
         {
 
             nearbyData.Ally[nearbyData.Ally[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, TargetAI);
-            nearbyData.nearbyAllyCount++;
+            nearbyData.nearbyAllyCount += 1;
             return;
         }
         else
@@ -219,15 +164,18 @@ public abstract class BehaviourStateTemplate
                 } 
             }
             nearbyData.Enemy[nearbyData.Enemy[0].IsSlotEmpty() ? 0 : (nearbyData.Enemy[1].IsSlotEmpty()) ? 1 : 2] = new NearbyObjectData(true, TargetAI);
-            nearbyData.nearbyEnemyCount++;
+            nearbyData.nearbyEnemyCount += 1;
             return;
         }
     }
-    public bool DecideChoice(CalculatorFunction function, GameObject Target)
+    public bool DecideChoice(CalculatorFunction function, GameObject Target, bool OutputToLog = false)
    {
         float bar = CalculateChance(_aifsm._baseRole, _aifsm._overrideRole, function, Target);
         float roll = UnityEngine.Random.Range(0f, 1f);
-        Debug.Log(_AI._agentData.FriendlyTeam.ToString() + " Deciding, chose " + (roll < bar).ToString());
+        if (OutputToLog)
+        {
+            Debug.Log(_AI._agentData.FriendlyTeam.ToString() + " Deciding, chose " + (roll < bar).ToString());
+        }
         return roll < bar;
     }
     public float CalculateChance(AIFSM.BaseRole baseRole, AIFSM.OverrideRole overrideRole, CalculatorFunction function, GameObject Target)
@@ -351,9 +299,9 @@ public abstract class BehaviourStateTemplate
 
         for (int i = 0; i < nearbyData.nearbyFlagCount; i++)
         {
-            if (nearbyData.Flag[i].gameObject.name == selfFlag)
+            if (nearbyData.Flag[i].targetGameObject.name == selfFlag)
             {
-                return nearbyData.Flag[i].gameObject;
+                return nearbyData.Flag[i].targetGameObject;
             }
             else
             {
@@ -361,7 +309,7 @@ public abstract class BehaviourStateTemplate
             }
         }
 
-        return nearbyData.Flag[newTarget].gameObject;
+        return nearbyData.Flag[newTarget].targetGameObject;
     }
     protected GameObject GetFlagHolderIfPresent() // exists to prioritise nearby enemies by whether they have the flag or not
     {
@@ -372,16 +320,16 @@ public abstract class BehaviourStateTemplate
         int newTarget = 0; // default selection is first in list, if this method has been called, 0 is always occupied
         for (int i = 0; i < nearbyData.nearbyEnemyCount; i++)
         {
-            if (nearbyData.Enemy[i].gameObject.GetComponent<AI>()._agentInventory.HasItem(selfFlag).owned) // if holding own teams flag
+            if (nearbyData.Enemy[i].targetGameObject.GetComponent<AI>()._agentInventory.HasItem(selfFlag).owned) // if holding own teams flag
             {
-                return nearbyData.Enemy[i].gameObject; // immediate return, no point in checking anythig else
+                return nearbyData.Enemy[i].targetGameObject; // immediate return, no point in checking anythig else
             }
-            else if (nearbyData.Enemy[i].gameObject.GetComponent<AI>()._agentInventory.HasItem(enemyFlag).owned) // if holding enemy teams flag
+            else if (nearbyData.Enemy[i].targetGameObject.GetComponent<AI>()._agentInventory.HasItem(enemyFlag).owned) // if holding enemy teams flag
             {
                 newTarget = i; // override default selection to holder of enemy flag, but still checks rest of list
             }
         }
-        return nearbyData.Enemy[newTarget].gameObject; // returns enemy flag holder if found, slot 0 if not
+        return nearbyData.Enemy[newTarget].targetGameObject; // returns enemy flag holder if found, slot 0 if not
     }
     protected string TeamToFlagName(AgentData.Teams val)
     {
@@ -414,6 +362,10 @@ public abstract class BehaviourStateTemplate
     }
     public float GetYNegatedMagnitude(GameObject TargetObject, Vector3 CurrentPosition) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
     {
+        if(TargetObject == null)
+        {
+            return -1;
+        }
         Vector3 TargetPos = TargetObject.transform.position;
         TargetPos.y = 0;
         CurrentPosition.y = 0;
@@ -421,6 +373,14 @@ public abstract class BehaviourStateTemplate
     }
     public float GetYNegatedMagnitude(GameObject TargetObject, GameObject OtherObject) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
     {
+        if (TargetObject == null)
+        {
+            return -1;
+        }
+        if (OtherObject == null)
+        {
+            return -1;
+        }
         Vector3 TargetPos = TargetObject.transform.position;
         Vector3 OtherPos = OtherObject.transform.position;
         TargetPos.y = 0;
@@ -429,6 +389,10 @@ public abstract class BehaviourStateTemplate
     }
     public float GetYNegatedMagnitude(GameObject TargetObject) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
     {
+        if (TargetObject == null)
+        {
+            return -1;
+        }
         Vector3 TargetPos = TargetObject.transform.position;
         Vector3 CurrPos = _AI.transform.position;
         TargetPos.y = 0;
@@ -438,6 +402,6 @@ public abstract class BehaviourStateTemplate
     
     public virtual void HasTakenDamage()
     {
-        UpdateVision();
+        //UpdateVision();
     }
 }

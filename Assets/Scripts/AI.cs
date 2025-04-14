@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 
 /*****************************************************************************************************************************
@@ -101,20 +102,59 @@ public class AI : MonoBehaviour
         public string jobTitle;
     }
 
+    //public DebugOverlayHandler doh;
     public AIFSM _playerFSM;
     public string currentJob;
     public ExecuteResult _result;
-    
+    public Color AICol;
+
     // Use this for initialization
     void Start ()
     {
         // Initialise the accessable script components
+        //doh = DebugOverlayHandler.DOH;
         _agentData = GetComponent<AgentData>();
         _agentActions = GetComponent<AgentActions>();
         _agentSenses = GetComponentInChildren<Sensing>();
         _agentInventory = GetComponentInChildren<InventoryController>();
         _playerFSM = new AIFSM(this);
         Debug.Log(_playerFSM.ToString());
+
+        if (gameObject.name.Contains("1"))
+        {
+            if(gameObject.name.Contains("Red"))
+            {
+                AICol = new Color32(0xEC, 0x82, 0x13, 0xFF);
+            }
+            if (gameObject.name.Contains("Blue"))
+            {
+                AICol = new Color32(0x96, 0x25, 0xC7, 0xFF);
+            }
+        }
+        else if (gameObject.name.Contains("2"))
+        {
+            if (gameObject.name.Contains("Red"))
+            {
+                AICol = new Color32(0xEC, 0x15, 0x13, 0xFF);
+            }
+            if (gameObject.name.Contains("Blue"))
+            {
+                AICol = new Color32(0x45, 0x25, 0xC7, 0xFF);
+            }
+        }
+        else if(gameObject.name.Contains("3"))
+        {
+            if (gameObject.name.Contains("Red"))
+            {
+                AICol = new Color32(0xEC, 0x13, 0x7E, 0xFF);
+            }
+            if (gameObject.name.Contains("Blue"))
+            {
+                AICol = new Color32(0x25, 0x56, 0xC7, 0xFF);
+            }
+        }
+
+        gameObject.GetComponent<MeshRenderer>().material.color = AICol;
     }
 
     // Update is called once per frame

@@ -42,10 +42,13 @@ public class BH_CollectCollectable : BehaviourStateTemplate
             {
                 _aifsm._overrideRole = AIFSM.OverrideRole.Retriever;
             }
-            if (_AI._agentInventory.AddItem(IntendedCollectable))
+            if(_AI._agentSenses.IsItemInReach(IntendedCollectable))
             {
-                _AI._agentActions.CollectItem(IntendedCollectable);
-            }   
+                if (_AI._agentInventory.AddItem(IntendedCollectable))
+                {
+                    _AI._agentActions.CollectItem(IntendedCollectable);
+                }   
+            }
             _aifsm.SetCurrentState(ReturnState);
             return GenerateResult(true);
         }
