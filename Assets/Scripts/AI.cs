@@ -120,6 +120,7 @@ public class AI : MonoBehaviour
         _playerFSM = new AIFSM(this);
         Debug.Log(_playerFSM.ToString());
 
+        #region Recolour
         if (gameObject.name.Contains("1"))
         {
             if(gameObject.name.Contains("Red"))
@@ -146,13 +147,14 @@ public class AI : MonoBehaviour
         {
             if (gameObject.name.Contains("Red"))
             {
-                AICol = new Color32(0xEC, 0x13, 0x7E, 0xFF);
+                AICol = new Color32(0xEA, 0xEC, 0x13, 0xFF);
             }
             if (gameObject.name.Contains("Blue"))
             {
                 AICol = new Color32(0x25, 0x56, 0xC7, 0xFF);
             }
         }
+        #endregion
 
         gameObject.GetComponent<MeshRenderer>().material.color = AICol;
     }
@@ -163,5 +165,10 @@ public class AI : MonoBehaviour
         // Run your AI code in here
         _result = _playerFSM.FSMUpdate();
         currentJob = _result.jobTitle;
+    }
+
+    private void OnDestroy()
+    {
+        _playerFSM.WipeCurrentState();
     }
 }

@@ -10,6 +10,9 @@ public class NearbyData
     public int nearbyAllyCount;
     public int nearbyFlagCount;
 
+    public int nearbyAllyHoldingFlag;
+    public int nearbyEnemyHoldingFlag;
+
     public NearbyData()
     {
         Collectable = new NearbyObjectData();//big enough for the possibility to never happen of too many objs on floor
@@ -20,6 +23,8 @@ public class NearbyData
         nearbyAllyCount = 0;
         nearbyFlagCount = 0;
         nearbyEnemyCount = 0;
+        nearbyAllyHoldingFlag = 0;
+        nearbyEnemyHoldingFlag = 0;
     }
 
 
@@ -88,5 +93,7 @@ public class NearbyData
         nearbyAllyCount = 0;
         nearbyFlagCount = 0;
         nearbyEnemyCount = 0;
+        nearbyAllyHoldingFlag = 0;
+        nearbyEnemyHoldingFlag = 0;
     }
 }

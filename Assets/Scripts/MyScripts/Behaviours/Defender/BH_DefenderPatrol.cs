@@ -56,13 +56,27 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
     {
         UpdateVision();
         // State Change Logic
+
+        if (nearbyData.nearbyAllyHoldingFlag > 0 && _aifsm._overrideRole != AIFSM.OverrideRole.Retriever)
+        {
+            _aifsm._overrideRole = AIFSM.OverrideRole.Protector;
+            _aifsm.SetCurrentState(new BH_ProtectorCover(_aifsm, new BH_DefenderPatrol(_aifsm, currentPatrolPoint), GetAllyHoldingFlagByPriority()));
+            return GenerateResult(true);
+        }
+        if (nearbyData.nearbyEnemyHoldingFlag > 0)
+        {
+            _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, new BH_DefenderPatrol(_aifsm, currentPatrolPoint), GetFlagHolderIfPresent()));
+            return GenerateResult(true);
+        }
         if (nearbyData.nearbyFlagCount > 0)
         {
             _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_DefenderPatrol(_aifsm), GetFlagByPriority()));
+            return GenerateResult(true);
         }
        if (nearbyData.nearbyEnemyCount > 0)
         {
             _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, new BH_DefenderPatrol(_aifsm, currentPatrolPoint), GetFlagHolderIfPresent()));
+            return GenerateResult(true);
         }
         if (nearbyData.Collectable.exists) // nearby collectable collection check, moves to BH_CollectableCollect on success
         {
@@ -71,6 +85,7 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
                 if (DecideChoice(CalculatorFunction.Collectable, nearbyData.Collectable.targetGameObject))
                 {
                     _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_DefenderPatrol(_aifsm,currentPatrolPoint), nearbyData.Collectable.targetGameObject));
+                    return GenerateResult(true);
                 }
                 else
                 {
@@ -99,16 +114,8 @@ public class BH_DefenderPatrol : BehaviourStateTemplate
     private void MoveToNextTarget(int specificPoint = -1) // ez rotation between locations, optional specific point selection
     {
         currentPatrolPoint = ((specificPoint == -1) ? currentPatrolPoint + 1 : specificPoint) % 3;
-        jobName = jobName + " to point " + currentPatrolPoint.ToString();
     }
 
-    public override void HasTakenDamage()
-    {
-        base.HasTakenDamage();
-        if (nearbyData.nearbyEnemyCount > 0)
-        {
-            _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, new BH_DefenderPatrol(_aifsm, currentPatrolPoint), GetFlagHolderIfPresent()));
-        }
-    }
+
 
 }

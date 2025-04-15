@@ -31,8 +31,8 @@ public class BH_Core : BehaviourStateTemplate
             // the answer is dynamically set them
         }
         throw new System.NotImplementedException();
-        returnResult.success = true;
-        return returnResult;
+        
+        //return GenerateResult(true);
     }
     public override void OnExit()
     {

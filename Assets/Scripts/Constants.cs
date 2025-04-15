@@ -77,11 +77,14 @@ public static class AIConstants
         public const float EngagmentChance = 1f;
         public const float EngagementRangeRestriction = 15f;
 
+        public const float ReengagmentDistanceDelta = 10f;
+
         // Heal Health Triggers
         public const float HealthToHeal = 30f;
 
-        // Damage Boost Health Triggers - probably ignore these it may get mroe complicated, or become chance based
-        public const float HealthToBoost = 60f;
+        // Damage Boost Health Triggers 
+        public const float HealthToPowerUp = 60f; // being below this health value will trigger a powerup
+        public const float HealthDeltaToPowerUp = 30f; // being this far below the target's health will trigger a power up
 
         // Startup Ignore
         public const float StartupIgnoreCollectableDuration = 2f;
@@ -97,23 +100,25 @@ public static class AIConstants
 
         // Enemy Engagment Rates
         public const float EngagmentChance = 1f;
+        public const float ReengagmentDistanceDelta = 10f;
 
         // Heal Health Triggers
         public const float HealthToHeal = 20f;
 
-        // Damage Boost Health Triggers - probably ignore these it may get mroe complicated, or become chance based
-        public const float HealthToBoost = 20f;
+        // Damage Boost Health Triggers
+        public const float HealthToPowerUp = 40f; // being below this health value will trigger a powerup
+        public const float HealthDeltaToPowerUp = 40f; // being this far below the target's health will trigger a power up
 
     }
     public class Retriever
     {
         // Collectable Pickup Chances
-        public const float InitialCollectChance = 0.75f;
-        public const float RepeatCollectChance = 0.5f;
+        public const float InitialCollectChance = 0.5f;
+        public const float RepeatCollectChance = 0.15f;
         public const bool OwnershipReducesCollectChance = true;
-        public const float PickupRangeRestriction = 5f;
+        public const float PickupRangeRestriction = 15f;
 
-        // Enemy Engagment Rates
+        // Enemy Engagment Rates - probably redundant
         public const float EngagmentChance = 0.1f;
         public const float IgnoreAllDistance = 20f;
         public const bool ProximityToBaseDisablesEngagments = true;
@@ -121,8 +126,12 @@ public static class AIConstants
         // Heal Health Triggers
         public const float HealthToHeal = 50f;
 
-        // Damage Boost Health Triggers - probably ignore these it may get mroe complicated, or become chance based
-        public const float HealthToBoost = 50f;
+        // Damage Boost Health Triggers 
+        public const float HealthToPowerUp = 100f; // being below this health value will trigger a powerup
+        public const float HealthDeltaToPowerUp = 0f; // being this far below the target's health will trigger a power up
+
+        // Alert Frequency
+        public const float AlertCooldown = 3f;
 
     }
     public class Protector
@@ -135,14 +144,19 @@ public static class AIConstants
 
         // Enemy Engagment Rates
         public const float EngagmentChance = 1f;
+        public const float EngagementRangeRestriction = 25f;
         public const bool RetrieverThreatenedOverridesTarget = true;
         public const bool RetrieverThreatenedOverridesActions = true;
+        public const float ReengagmentDistanceDelta = 10f;
+
+        public const float TetherDistance = 30f; // how far the protector can get away from the retriever before being forced to go back to it
 
         // Heal Health Triggers
         public const float HealthToHeal = 40f;
 
-        // Damage Boost Health Triggers - probably ignore these it may get mroe complicated, or become chance based
-        public const float HealthToBoost = 40f;
+        // Damage Boost Health Triggers
+        public const float HealthToPowerUp = 70f; // being below this health value will trigger a powerup
+        public const float HealthDeltaToPowerUp = 20f; // being this far below the target's health will trigger a power up
 
     }
 }

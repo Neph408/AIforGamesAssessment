@@ -61,6 +61,10 @@ public class IgnoredObjectList
         {
             for (int i = 0; i < IgnoredCollectables.Count; i++)
             {
+                if (IgnoredCollectables[i].gameObject == null)
+                {
+                    IgnoredCollectables.RemoveAt(i);
+                }
                 if (Time.time > IgnoredCollectables[i].timestampOfAcknowledge)
                 {
                     Remember(i);

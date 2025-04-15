@@ -3,9 +3,11 @@ using Palmmedia.ReportGenerator.Core.Reporting.Builders;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime;
 using System.Threading;
 using TMPro.EditorUtilities;
 using UnityEngine;
+using static AIConstants;
 using static UnityEngine.GraphicsBuffer;
 
 public abstract class BehaviourStateTemplate
@@ -32,8 +34,6 @@ public abstract class BehaviourStateTemplate
     public AI.ExecuteResult returnResult;
     public NearbyData nearbyData;
 
-    private string LogText;
-
     private float timer;
     private bool reachedTarget = false;
 
@@ -52,13 +52,31 @@ public abstract class BehaviourStateTemplate
 
     public abstract void OnExit();
 
+    public virtual void RetrieverTakenDamage(GameObject attacker)
+    {
+        // does nothing for non protectors
+        Debug.LogError("Retriver Alert sent to non-protector");
+    }
+
     public virtual void UpdateVision(bool OutputToLog = true)
     {
         AgentData.Teams selfTeam = _AI._agentData.FriendlyTeam;
 
         ObjectsInView = _AI._agentSenses.GetObjectsInView();
         nearbyData.ClearData(); // clears to not retain outdated info
+        /*
+         
+        why did i not just have a bunch of virtuals that get overridden in behaviour methods
+        this wouldve been so much cleaner
+        like
+        see flag on ground
+        see enemy holding flag
+        see enemy
+        see ally retriever
+        
+        this wouldve been so much cleaner
 
+         */
 
         foreach (GameObject i in ObjectsInView)
         {
@@ -92,7 +110,7 @@ public abstract class BehaviourStateTemplate
                     }
                     break;
                 case "Flag":
-                    if (!IsSelfFlagAtOwnBase(i))
+                    if (!FlagAtOwnBase(i))
                     {
                         if (i.transform.parent == null)
                         {
@@ -106,28 +124,142 @@ public abstract class BehaviourStateTemplate
                     break;
             }
 
+            UpdateDebugOverlay();
+        }
+    }
 
-            LogText = _AI.gameObject.name.ToString() + " - Current Nearby Object Count : " + ObjectsInView.Count.ToString() + "\n"
+    private void UpdateDebugOverlay()
+    {
+        string LogText;
+        string roleText = "-"; 
+        if(_aifsm._overrideRole == AIFSM.OverrideRole.None)
+        {
+            roleText = _aifsm._baseRole == AIFSM.BaseRole.Defender ? "Defender" : "Attacker";
+        }
+        else
+        {
+            roleText = _aifsm._overrideRole == AIFSM.OverrideRole.Protector ? "Protector" : "Retriever";
+        }
+
+        LogText = _AI.gameObject.name.ToString() +" | Role : "+ roleText + " | " + jobName + "\n"
+            + "Current Nearby Object Count : " + ObjectsInView.Count.ToString() + "\n"
             + nearbyData.nearbyEnemyCount.ToString() + " Enemies | " + nearbyData.nearbyFlagCount.ToString() + " Flags | " + nearbyData.nearbyAllyCount.ToString() + " Nearby Allies" + "\n"
+            + nearbyData.nearbyEnemyHoldingFlag.ToString() + " Enemies W/ Flag | " + nearbyData.nearbyAllyHoldingFlag.ToString() + " Nearby Allies W/ Flag" + "\n"
             + "Nearby Data : \n" 
             + nearbyData.GetDataAsString() + "\n"
             + "Ignore List ("+_aifsm._ignoredObjectList.Count+") : \n"
             + _aifsm._ignoredObjectList.GetDataAsString();
             doh.SetSlotText(_AI.gameObject.name, LogText, _AI.AICol);
-            LogText = "";
-            
-        }
+        LogText = "";
     }
 
-    private bool IsSelfFlagAtOwnBase(GameObject val)
+    protected bool HealthConsumableCheck()
     {
-        if(FlagNameToTeam(val.name) == _AI._agentData.FriendlyTeam)
+        if(!_AI._agentInventory.HasItem("Health Kit").owned)
         {
-            float dis = Mathf.Abs((_AI._agentData.FriendlyBase.transform.position - val.transform.position).magnitude);
-            if (dis < 3f)
+            return false;
+        }
+
+        if(_aifsm._overrideRole == AIFSM.OverrideRole.None)
+        {
+            if(_aifsm._baseRole == AIFSM.BaseRole.Defender)
             {
+                if(_AI._agentData.CurrentHitPoints < AIConstants.Defender.HealthToHeal)
+                {
+                    _AI._agentActions.UseItem(_AI._agentInventory.GetItem("Health Kit"));
+                    return true;
+                }
+            }
+            else
+            {
+                if (_AI._agentData.CurrentHitPoints < AIConstants.Attacker.HealthToHeal)
+                {
+                    _AI._agentActions.UseItem(_AI._agentInventory.GetItem("Health Kit"));
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            if(_aifsm._overrideRole == AIFSM.OverrideRole.Retriever)
+            {
+                if (_AI._agentData.CurrentHitPoints < AIConstants.Retriever.HealthToHeal)
+                {
+                    _AI._agentActions.UseItem(_AI._agentInventory.GetItem("Health Kit"));
+                    return true;
+                }
+            }
+            else
+            {
+                if (_AI._agentData.CurrentHitPoints < AIConstants.Protector.HealthToHeal)
+                {
+                    _AI._agentActions.UseItem(_AI._agentInventory.GetItem("Health Kit"));
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    protected bool PowerupConsumableCheck(GameObject CurrentAttackingTarget)
+    {
+        AI CurrentAttackingAI = CurrentAttackingTarget.GetComponent<AI>();
+        if (!_AI._agentInventory.HasItem("Power Up").owned || _AI._agentData.IsPoweredUp)
+        {
+            return false;
+        }
+
+        if (_aifsm._overrideRole == AIFSM.OverrideRole.None)
+        {
+            if(CurrentAttackingAI._agentData.HasFriendlyFlag || CurrentAttackingAI._agentData.HasEnemyFlag) // go for murder (try to kill flag holder no matter what)
+            {
+                _AI._agentActions.UseItem(_AI._agentInventory.GetItem("Power Up"));
                 return true;
             }
+            if (_aifsm._baseRole == AIFSM.BaseRole.Defender)
+            {
+                if (_AI._agentData.CurrentHitPoints < AIConstants.Defender.HealthToPowerUp || (CurrentAttackingAI._agentData.CurrentHitPoints - _AI._agentData.CurrentHitPoints) > AIConstants.Defender.HealthDeltaToPowerUp)
+                {
+                    _AI._agentActions.UseItem(_AI._agentInventory.GetItem("Power Up"));
+                    return true;
+                }
+            }
+            else
+            {
+                if (_AI._agentData.CurrentHitPoints < AIConstants.Attacker.HealthToPowerUp || (CurrentAttackingAI._agentData.CurrentHitPoints - _AI._agentData.CurrentHitPoints) > AIConstants.Attacker.HealthDeltaToPowerUp)
+                {
+                    _AI._agentActions.UseItem(_AI._agentInventory.GetItem("Power Up"));
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            if (_aifsm._overrideRole == AIFSM.OverrideRole.Retriever)
+            {
+                if (_AI._agentData.CurrentHitPoints < AIConstants.Retriever.HealthToPowerUp || (CurrentAttackingAI._agentData.CurrentHitPoints - _AI._agentData.CurrentHitPoints) > AIConstants.Retriever.HealthDeltaToPowerUp)
+                {
+                    _AI._agentActions.UseItem(_AI._agentInventory.GetItem("Power Up"));
+                    return true;
+                }
+            }
+            else
+            {
+                if (_AI._agentData.CurrentHitPoints < AIConstants.Protector.HealthToPowerUp || (CurrentAttackingAI._agentData.CurrentHitPoints - _AI._agentData.CurrentHitPoints) > AIConstants.Protector.HealthDeltaToPowerUp)
+                {
+                    _AI._agentActions.UseItem(_AI._agentInventory.GetItem("Power Up"));
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private bool FlagAtOwnBase(GameObject targetFlag)
+    {
+        if (GetYNegatedMagnitude(targetFlag, _AI._agentData.FriendlyBase) < 3f)
+        {
+            return true;
         }
         return false;
     }
@@ -139,32 +271,48 @@ public abstract class BehaviourStateTemplate
         }
         return (_aifsm._overrideRole == AIFSM.OverrideRole.Protector) ? AIConstants.Protector.PickupRangeRestriction : AIConstants.Retriever.PickupRangeRestriction;
     }
-    private void RegisterNearbyAI(AgentData.Teams selfTeam, GameObject TargetAI)
+    private void RegisterNearbyAI(AgentData.Teams selfTeam, GameObject TargetObject)
     {
-        if (_aifsm._ignoredObjectList.Contains(TargetAI))// if ignored, ignore  FOR THE LONGEST FUCKING TIME THERE WAS A IF (IGNORELIST == 0 || IGNORELIST.CONTAINS TARGET) HERE AND I DONT KNOW WHY AND IT CAUSED ME HOURS OF PAIN WHAT THE FUCK IS WRONG WITH ME LIKE HOLY FUCK IT MADE ERVYTHING EB IGNORED OIF THE IGNORE LIST AS EMPTY
+        if (_aifsm._ignoredObjectList.Contains(TargetObject))// if ignored, ignore  FOR THE LONGEST FUCKING TIME THERE WAS A IF (IGNORELIST == 0 || IGNORELIST.CONTAINS TARGET) HERE AND I DONT KNOW WHY AND IT CAUSED ME HOURS OF PAIN WHAT THE FUCK IS WRONG WITH ME LIKE HOLY FUCK IT MADE ERVYTHING EB IGNORED OIF THE IGNORE LIST AS EMPTY
         {
             return;
         }
 
-        if (selfTeam == TargetAI.GetComponent<AI>()._agentData.FriendlyTeam)
+        if (selfTeam == TargetObject.GetComponent<AI>()._agentData.FriendlyTeam)
         {
 
-            nearbyData.Ally[nearbyData.Ally[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, TargetAI);
+            nearbyData.Ally[nearbyData.Ally[0].IsSlotEmpty() ? 0 : 1] = new NearbyObjectData(true, TargetObject);
             nearbyData.nearbyAllyCount += 1;
+            if(TargetObject.GetComponent<AI>()._agentData.HasFriendlyFlag || TargetObject.GetComponent<AI>()._agentData.HasEnemyFlag)
+            {
+                nearbyData.nearbyAllyHoldingFlag += 1;
+            }
             return;
         }
         else
         {
             if (_aifsm._baseRole == AIFSM.BaseRole.Defender && _aifsm._overrideRole == AIFSM.OverrideRole.None)
             {
-                if (GetYNegatedMagnitude(TargetAI, _AI._agentData.FriendlyBase) > AIConstants.Defender.EngagementRangeRestriction) 
+                if (GetYNegatedMagnitude(TargetObject, _AI._agentData.FriendlyBase) > AIConstants.Defender.EngagementRangeRestriction ) 
                 {
-                    _aifsm._ignoredObjectList.Add(TargetAI, AIConstants.Global.IgnoreEnemyDuration);
+                    _aifsm._ignoredObjectList.Add(TargetObject, AIConstants.Global.IgnoreEnemyDuration);
                     return;
                 } 
             }
-            nearbyData.Enemy[nearbyData.Enemy[0].IsSlotEmpty() ? 0 : (nearbyData.Enemy[1].IsSlotEmpty()) ? 1 : 2] = new NearbyObjectData(true, TargetAI);
+            if (_aifsm._overrideRole == AIFSM.OverrideRole.Protector)
+            {
+                if (GetYNegatedMagnitude(TargetObject, _AI.transform.position) > AIConstants.Protector.EngagementRangeRestriction)
+                {
+                    _aifsm._ignoredObjectList.Add(TargetObject, AIConstants.Global.IgnoreEnemyDuration);
+                    return;
+                }
+            }
+            nearbyData.Enemy[nearbyData.Enemy[0].IsSlotEmpty() ? 0 : (nearbyData.Enemy[1].IsSlotEmpty()) ? 1 : 2] = new NearbyObjectData(true, TargetObject);
             nearbyData.nearbyEnemyCount += 1;
+            if (TargetObject.GetComponent<AI>()._agentData.HasFriendlyFlag || TargetObject.GetComponent<AI>()._agentData.HasEnemyFlag)
+            {
+                nearbyData.nearbyEnemyHoldingFlag += 1;
+            }
             return;
         }
     }
@@ -208,7 +356,7 @@ public abstract class BehaviourStateTemplate
             {
                 if (function == CalculatorFunction.Collectable)
                 {
-                    if (_AI._agentInventory.HasItem(Target.name).owned) { return AIConstants.Attacker.InitialCollectChance; }
+                    if (!_AI._agentInventory.HasItem(Target.name).owned) { return AIConstants.Attacker.InitialCollectChance; }
                     return Mathf.Pow(AIConstants.Attacker.RepeatCollectChance, AIConstants.Attacker.OwnershipReducesCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
                 }
                 else
@@ -223,7 +371,7 @@ public abstract class BehaviourStateTemplate
             {
                 if (function == CalculatorFunction.Collectable)
                 {
-                    if (_AI._agentInventory.HasItem(Target.name).owned) { return AIConstants.Protector.InitialCollectChance; }
+                    if (!_AI._agentInventory.HasItem(Target.name).owned) { return AIConstants.Protector.InitialCollectChance; }
                     return Mathf.Pow(AIConstants.Protector.RepeatCollectChance, AIConstants.Protector.DoesOwnershipReduceCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
                 }
                 else
@@ -235,7 +383,7 @@ public abstract class BehaviourStateTemplate
             {
                 if (function == CalculatorFunction.Collectable)
                 {
-                    if (_AI._agentInventory.HasItem(Target.name).owned) { return AIConstants.Retriever.InitialCollectChance; }
+                    if (!_AI._agentInventory.HasItem(Target.name).owned) { return AIConstants.Retriever.InitialCollectChance; }
                     return Mathf.Pow(AIConstants.Retriever.RepeatCollectChance, AIConstants.Retriever.OwnershipReducesCollectChance ? _AI._agentInventory.HasItem(Target.name).quantityOwned : 1);
                 }
                 else
@@ -245,15 +393,15 @@ public abstract class BehaviourStateTemplate
             }
         }
     }
-    public bool MoveToPosition(GameObject targetObject, float waitAtPositionDuration)
+    public bool MoveToPosition(GameObject targetObject, float waitAtPositionDuration = 0f)
     {
         return (MoveToPosition(targetObject.transform.position, waitAtPositionDuration));
     }
-    public bool MoveToPosition(Vector3 targetLocation, float waitAtPositionDuration)
+    public bool MoveToPosition(Vector3 targetLocation, float waitAtPositionDuration = 0f)
     {
-        if(nearbyData.nearbyEnemyCount > 0)
+        if(nearbyData.nearbyEnemyCount > 0) 
         {
-            reachedTarget = true;
+            //reachedTarget = true;
             timer = 0f;
         }
 
@@ -282,8 +430,14 @@ public abstract class BehaviourStateTemplate
     }
     public AI.ExecuteResult GenerateResult(bool success)
     {
+        string displayJob = jobName;
         returnResult.success = success;
-        returnResult.jobTitle = jobName;
+        if(displayJob.Contains("</color>"))
+        {
+            displayJob = displayJob.Replace("</color>", "");
+            displayJob = displayJob.Split("<")[0] + displayJob.Split(">")[1]; 
+        }
+        returnResult.jobTitle = displayJob;
         return  returnResult;
     }
     public string GetName()
@@ -311,25 +465,69 @@ public abstract class BehaviourStateTemplate
 
         return nearbyData.Flag[newTarget].targetGameObject;
     }
+    protected GameObject GetAllyHoldingFlagByPriority()
+    {
+        GameObject enemyFlagHolder = nearbyData.Ally[0].targetGameObject;// default return val
+        foreach (NearbyObjectData ally in nearbyData.Ally)
+        {
+            if(ally.targetGameObject.GetComponent<AI>()._agentData.HasFriendlyFlag) // oh,. hasflag exists. i gotta go change a lot of hasitem checks
+            {
+                return ally.targetGameObject;
+            }
+            if(ally.targetGameObject.GetComponent<AI>()._agentData.HasEnemyFlag)
+            {
+                enemyFlagHolder = ally.targetGameObject;
+            }
+        }
+        return enemyFlagHolder;
+    }
     protected GameObject GetFlagHolderIfPresent() // exists to prioritise nearby enemies by whether they have the flag or not
     {
-        string selfFlag = (_AI._agentData.FriendlyTeam == AgentData.Teams.BlueTeam) ? "Blue Flag" : "Red Flag";
-        string enemyFlag = (_AI._agentData.FriendlyTeam == AgentData.Teams.BlueTeam) ? "Red Flag" : "Blue Flag";
         // prioritises Own Flag > Enemy Flag > No Flag
 
         int newTarget = 0; // default selection is first in list, if this method has been called, 0 is always occupied
+        int newTargetPriority = 0; // holding enemy flag is 1 priority
+        float newTargetDistance = 1000f; // only for 0 priority 
         for (int i = 0; i < nearbyData.nearbyEnemyCount; i++)
         {
-            if (nearbyData.Enemy[i].targetGameObject.GetComponent<AI>()._agentInventory.HasItem(selfFlag).owned) // if holding own teams flag
+            if (nearbyData.Enemy[i].targetGameObject.GetComponent<AI>()._agentData.HasFriendlyFlag) // if holding own teams flag
             {
                 return nearbyData.Enemy[i].targetGameObject; // immediate return, no point in checking anythig else
             }
-            else if (nearbyData.Enemy[i].targetGameObject.GetComponent<AI>()._agentInventory.HasItem(enemyFlag).owned) // if holding enemy teams flag
+            else if (nearbyData.Enemy[i].targetGameObject.GetComponent<AI>()._agentData.HasEnemyFlag) // if holding enemy teams flag
             {
                 newTarget = i; // override default selection to holder of enemy flag, but still checks rest of list
+                newTargetPriority = 1;
+            }
+            else
+            {
+                if(newTargetPriority == 0)
+                {
+                    if(GetYNegatedMagnitude(nearbyData.Enemy[i].targetGameObject, _AI.transform.position) < newTargetDistance)
+                    {
+                        newTarget = i;
+                        newTargetDistance = GetYNegatedMagnitude(nearbyData.Enemy[i].targetGameObject, _AI.transform.position);
+                    }
+                }
             }
         }
-        return nearbyData.Enemy[newTarget].targetGameObject; // returns enemy flag holder if found, slot 0 if not
+        return nearbyData.Enemy[newTarget].targetGameObject; // returns enemy flag holder if found, otherwise returns nearest normal enemy
+    }
+    protected GameObject GetNearestEnemy() // gets nearest enemy without refreshing vision
+    {
+        // prioritises Own Flag > Enemy Flag > No Flag
+
+        int newTarget = 0; // default selection is first in list, if this method has been called, 0 is always occupied
+        float newTargetDistance = 1000f;
+        for (int i = 0; i < nearbyData.nearbyEnemyCount; i++)
+        {
+            if (GetYNegatedMagnitude(nearbyData.Enemy[i].targetGameObject, _AI.transform.position) < newTargetDistance)
+            {
+                newTarget = i;
+                newTargetDistance = GetYNegatedMagnitude(nearbyData.Enemy[i].targetGameObject, _AI.transform.position);
+            }
+        }
+        return nearbyData.Enemy[newTarget].targetGameObject; // returns enemy flag holder if found, otherwise returns nearest normal enemy
     }
     protected string TeamToFlagName(AgentData.Teams val)
     {
@@ -354,6 +552,7 @@ public abstract class BehaviourStateTemplate
         }
         throw new Exception(val + " is an invalid flag name");
     }
+    #region gynm
     public float GetYNegatedMagnitude(Vector3 Target, Vector3 CurrentPosition) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
     {
         Target.y = 0;
@@ -399,9 +598,53 @@ public abstract class BehaviourStateTemplate
         CurrPos.y = 0;
         return (TargetPos - CurrPos).magnitude;
     }
-    
-    public virtual void HasTakenDamage()
+    #endregion
+    protected bool CheckForNearerEnemy(GameObject currentTarget, out GameObject newTarget)
     {
-        //UpdateVision();
+        float currentEngagmentDistanceDelta = 0f;
+
+        if(_aifsm._overrideRole == AIFSM.OverrideRole.None)
+        {
+            currentEngagmentDistanceDelta = _aifsm._baseRole == AIFSM.BaseRole.Defender ? AIConstants.Defender.ReengagmentDistanceDelta : AIConstants.Attacker.ReengagmentDistanceDelta;
+        }
+        else
+        {
+            currentEngagmentDistanceDelta = _aifsm._overrideRole == AIFSM.OverrideRole.Retriever ? 10000f : AIConstants.Protector.ReengagmentDistanceDelta;
+        }
+
+        if(GetYNegatedMagnitude(currentTarget, _AI.transform.position) > currentEngagmentDistanceDelta)
+        {
+            newTarget = GetFlagHolderIfPresent(); // gets nearest enemy if doesnt find any flag holdesr
+            return true;
+        }
+        newTarget = currentTarget;
+        return false;
     }
+    protected Vector3 GetRandomPositionTowards(GameObject targetPosition, float forcedforward = 2f)
+    {
+        return GetRandomPositionTowards(targetPosition.transform.position, forcedforward);
+    }
+    protected Vector3 GetRandomPositionTowards(Vector3 targetPosition,float forcedforward = 2f)
+    {
+        int safetybreak = 0;
+        if (forcedforward > 0f) { forcedforward = 0f; }
+        Vector3 retPos;
+        do
+        {
+            retPos = _AI._agentActions.GetRandomDestination(10f);
+            safetybreak += 1;
+            if (safetybreak > 100) { break; }
+        } while(GetYNegatedMagnitude(targetPosition, _AI.transform.position) - GetYNegatedMagnitude(targetPosition, retPos)  < forcedforward);
+
+        return retPos;
+    }
+
+
+    public virtual void HasTakenDamage(GameObject attacker) { }
+    public virtual void AddProtector(AI prot) { }
+    public virtual bool HasProtector(AI prot) { return false; }
+    public virtual void RemoveProtector(AI prot) { }
+
+
+
 }

@@ -193,7 +193,6 @@ public class AgentData : MonoBehaviour
         if (CurrentHitPoints + damage > 0)
         {
             CurrentHitPoints -= damage;
-            if (GetComponent<AI>()._playerFSM.HasCurrentState()) { GetComponent<AI>()._playerFSM.GetCurrentState().HasTakenDamage(); }
         }
         else
         {

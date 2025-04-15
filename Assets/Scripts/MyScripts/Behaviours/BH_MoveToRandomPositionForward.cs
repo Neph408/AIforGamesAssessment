@@ -28,9 +28,7 @@ public class BH_MoveToRandomPositionForward : BehaviourStateTemplate
             // figure out how to call correct behaviour
             // the answer is dynamically set them
         }
-        throw new System.NotImplementedException();
-        returnResult.success = true;
-        return returnResult;
+        return GenerateResult(true);
     }
     public override void OnExit()
     {

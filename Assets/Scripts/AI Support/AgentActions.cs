@@ -84,7 +84,7 @@ public class AgentActions : MonoBehaviour
     /// </summary>
     /// <param name="range">The raduis within which to get the location</param>
     /// <returns>A Vector3 representing the location</returns>
-    private Vector3 GetRandomDestination(float range)
+    public Vector3 GetRandomDestination(float range)
     {
         Vector3 newDestination;
 

@@ -68,10 +68,12 @@ public class AIFSM
 
     public void WipeCurrentState()
     {
-        CurrentState.OnExit();
-        CurrentState = null;
+        if (CurrentState != null)
+        {
+            CurrentState.OnExit();
+            CurrentState = null;
+        }
     }
-
     public AI.ExecuteResult FSMUpdate()
     {
         _ignoredObjectList.Update();

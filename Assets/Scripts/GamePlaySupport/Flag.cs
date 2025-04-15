@@ -43,6 +43,6 @@ public class Flag : Collectable
         gameObject.transform.position = flagPosition;
 
         // Becomes visible to AIs and they know it's not carried
-        gameObject.layer = LayerMask.NameToLayer("VisibleToAI");
+        gameObject.layer = LayerMask.NameToLayer("VisibleToAi");
     }
 }

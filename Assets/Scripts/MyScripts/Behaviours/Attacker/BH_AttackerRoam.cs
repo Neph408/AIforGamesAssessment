@@ -14,6 +14,7 @@ public class BH_AttackerRoam : BehaviourStateTemplate
         _aifsm = owner;
         _AI = owner.GetOwnerAI();
 
+        
         jobName = "Roaming";
         forcedTargetPosition = false;
     }
@@ -30,27 +31,48 @@ public class BH_AttackerRoam : BehaviourStateTemplate
     public override void OnEntry()
     {
         Debug.Log(_AI.gameObject.name + " Enter AttackerRoam");
+        targetPosition = GetRandomPositionTowards(_AI._agentData.EnemyBase);
     }
     public override AI.ExecuteResult Execute()
     {
         UpdateVision();
 
-
-        if(nearbyData.nearbyFlagCount > 0)
+        if(nearbyData.nearbyAllyHoldingFlag > 0 && _aifsm._overrideRole != AIFSM.OverrideRole.Retriever)
         {
-            _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_AttackerRoam(_aifsm), GetFlagByPriority()));
+            _aifsm._overrideRole = AIFSM.OverrideRole.Protector;
+            _aifsm.SetCurrentState(new BH_ProtectorCover(_aifsm, new BH_AttackerRoam(_aifsm), GetAllyHoldingFlagByPriority()));
+            return GenerateResult(true);
         }
 
-        if (nearbyData.nearbyEnemyCount > 0)
+        if(nearbyData.nearbyEnemyHoldingFlag > 0) // if enemy flag holder nearby, attack
         {
             _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, new BH_AttackerRoam(_aifsm), GetFlagHolderIfPresent()));
+            return GenerateResult(true);
         }
 
-        if(nearbyData.Collectable.exists)
+        if(nearbyData.nearbyFlagCount > 0) //  otherwise, pickup flag
+        {
+            /*if(nearbyData.nearbyEnemyCount == 1 && GetYNegatedMagnitude(nearbyData.Enemy[0].targetGameObject, _AI.transform.position) < 20f)
+            {
+                _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, new BH_AttackerRoam(_aifsm), nearbyData.Enemy[0].targetGameObject));
+                return GenerateResult(true);
+            }*/
+            _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_AttackerRoam(_aifsm), GetFlagByPriority()));
+            return GenerateResult(true);
+        }
+
+        if (nearbyData.nearbyEnemyCount > 0) // otherwise, attack enemy
+        {
+            _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, new BH_AttackerRoam(_aifsm), GetFlagHolderIfPresent()));
+            return GenerateResult(true);
+        }
+
+        if(nearbyData.Collectable.exists) // otherwise, collect collectables
         {
             if (DecideChoice(CalculatorFunction.Collectable, nearbyData.Collectable.targetGameObject))
             {
                 _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, new BH_AttackerRoam(_aifsm), nearbyData.Collectable.targetGameObject));
+                return GenerateResult(true);
             }
             else
             {
@@ -60,7 +82,7 @@ public class BH_AttackerRoam : BehaviourStateTemplate
 
         if(forcedTargetPosition)
         {
-            if(_AI._agentActions.MoveTo(targetPosition))
+            if(MoveToPosition(targetPosition))
             {
                 forcedTargetPosition = false;
             }
@@ -68,6 +90,10 @@ public class BH_AttackerRoam : BehaviourStateTemplate
         else
         {
             _AI._agentActions.MoveToRandomLocation();
+            /*if(MoveToPosition(targetPosition))
+            {
+                targetPosition = GetRandomPositionTowards(_AI._agentData.EnemyBase,-1);
+            }*/
         }
 
 
