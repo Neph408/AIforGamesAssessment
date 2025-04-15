@@ -54,12 +54,12 @@ public class BH_RetrieverReturn : BehaviourStateTemplate
 
         if(nearbyData.nearbyFlagCount > 0)
         {
-            //if(_AI._agentData.HasFriendlyFlag && nearbyData.Flag[0].targetGameObject.name == _AI._agentData.FriendlyFlagName)
-            //{
-                //_AI._agentActions.DropItem(HeldFlag);
+            if(_AI._agentData.HasFriendlyFlag && nearbyData.Flag[0].targetGameObject.name == _AI._agentData.FriendlyFlagName && _AI._agentInventory.GetInventoryUsage() == _AI._agentInventory.Capacity) // if inv full, prioritise holding own flag over enemy
+            {
+                _AI._agentActions.DropItem(HeldFlag);
+            }
                 _aifsm.SetCurrentState(new BH_CollectCollectable(_aifsm, ReturnState, nearbyData.Flag[0].targetGameObject));
                 return GenerateResult(true);
-            //}
         }
 
         if(nearbyData.Collectable.exists) // while retrieveing, if ai sees a health kit, it may choose to collect it, but with notably reduced chances, increasinly so if it owns one already

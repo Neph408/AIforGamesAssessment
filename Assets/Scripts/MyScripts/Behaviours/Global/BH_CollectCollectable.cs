@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using UnityEditor;
 using UnityEngine;
 
 public class BH_CollectCollectable : BehaviourStateTemplate
@@ -61,18 +62,34 @@ public class BH_CollectCollectable : BehaviourStateTemplate
 
         if (MoveToPosition(IntendedCollectable, 0f))
         {
-            if(_AI._agentSenses.IsItemInReach(IntendedCollectable))
+            if(_AI._agentSenses.IsItemInReach(IntendedCollectable)) // distance check for collect
             {
-                if (_AI._agentInventory.AddItem(IntendedCollectable))
+                if (_AI._agentInventory.AddItem(IntendedCollectable)) // check if can add, if can, add
                 {
-                    if (IntendedCollectable.name == _AI._agentData.FriendlyFlagName || IntendedCollectable.name == _AI._agentData.EnemyFlagName)
+                    if (IntendedCollectable.name == _AI._agentData.FriendlyFlagName || IntendedCollectable.name == _AI._agentData.EnemyFlagName)// check if item was flag
                     {
 
-                        _aifsm._overrideRole = AIFSM.OverrideRole.Retriever;
+                        _aifsm._overrideRole = AIFSM.OverrideRole.Retriever; // assign retriever
 
                     }
-                    _AI._agentActions.CollectItem(IntendedCollectable);
-                }   
+                    _AI._agentActions.CollectItem(IntendedCollectable); // pick item off ground
+                } 
+                else
+                {
+                    if(IntendedCollectable.name == _AI._agentData.FriendlyFlagName || IntendedCollectable.name == _AI._agentData.EnemyFlagName) // if couldnt add, check if was flag
+                    {
+                        if(_AI._agentInventory.HasItem("Power Up").quantityOwned > _AI._agentInventory.Capacity / 2) // if was flag, discard a single powerup if occupies more than half the inv. will prioritise most held
+                        {
+                            _AI._agentActions.DropItem(_AI._agentInventory.GetItem("Power Up"));
+                        }
+                        if (_AI._agentInventory.HasItem("Health Kit").quantityOwned > _AI._agentInventory.Capacity / 2)// if was flag, discard a single powerup if occupies more than half the inv. will prioritise most held
+                        {
+                            _AI._agentActions.DropItem(_AI._agentInventory.GetItem("Health Kit"));
+                        }
+                        _aifsm._overrideRole = AIFSM.OverrideRole.Retriever;  // assign ret
+                        _AI._agentActions.CollectItem(IntendedCollectable); // pick up
+                    }
+                }
             }
             if (_aifsm._overrideRole == AIFSM.OverrideRole.Retriever)// force override BH to RetRet
             {
