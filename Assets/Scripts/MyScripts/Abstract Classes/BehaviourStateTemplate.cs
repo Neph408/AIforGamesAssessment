@@ -552,7 +552,7 @@ public abstract class BehaviourStateTemplate
         }
         throw new Exception(val + " is an invalid flag name");
     }
-    #region gynm
+    #region GetYNegatedMagnitude Block
     public float GetYNegatedMagnitude(Vector3 Target, Vector3 CurrentPosition) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
     {
         Target.y = 0;
@@ -587,7 +587,7 @@ public abstract class BehaviourStateTemplate
         return (TargetPos - OtherPos).magnitude;
     }
     public float GetYNegatedMagnitude(GameObject TargetObject) // exists because i want to check how close the ai is to the intended target, y coord doesnt matter in this case
-    {
+    { //probably shouldve used this one more
         if (TargetObject == null)
         {
             return -1;
