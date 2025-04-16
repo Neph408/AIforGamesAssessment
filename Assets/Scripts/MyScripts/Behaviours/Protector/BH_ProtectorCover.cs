@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using static AIConstants;
 
@@ -67,6 +68,7 @@ public class BH_ProtectorCover : BehaviourStateTemplate
 
     public override void RetrieverTakenDamage(GameObject attacker)
     {
+        Debug.Log("Protector " + _AI.gameObject.name + " has targeted " + attacker.gameObject.name + " for attacking retriever " + TargetToCover.gameObject.name);
         _aifsm.SetCurrentState(new BH_AttackTarget(_aifsm, new BH_ProtectorCover(_aifsm, ReturnState, TargetToCover), attacker, TargetToCover));
     }
 

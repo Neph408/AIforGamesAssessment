@@ -95,6 +95,7 @@ public class BH_RetrieverReturn : BehaviourStateTemplate
 
     public override void AddProtector(AI prot)
     {
+        Debug.Log("Retreiver " + _AI.gameObject.name + " has added " + prot.gameObject.name + " to its Protector List");
         Protectors[(Protectors[0] == null) ? 0 : 1] = prot;
     }
     public override bool HasProtector(AI prot)
@@ -113,11 +114,13 @@ public class BH_RetrieverReturn : BehaviourStateTemplate
         if (Protectors[1] == prot)
         {
             Protectors[1] = null;
+            Debug.Log("Retreiver " + _AI.gameObject.name + " has removed " + prot.gameObject.name + " from its Protector List");
         }
         else if (Protectors[0] == prot)
         {
             Protectors[0] = null;
-            if(Protectors[1] != null)
+            Debug.Log("Retreiver " + _AI.gameObject.name + " has removed " + prot.gameObject.name + " from its Protector List");
+            if (Protectors[1] != null)
             {
                 Protectors[0] = Protectors[1];
                 Protectors[1] = null;
@@ -138,6 +141,7 @@ public class BH_RetrieverReturn : BehaviourStateTemplate
                 if (prot != null)
                 {
                     prot._playerFSM.GetCurrentState().RetrieverTakenDamage(attacker);
+                    Debug.Log("Retreiver " + _AI.gameObject.name + " has informed " + prot.gameObject.name + " of an attack");
                 }
             }
             TimestampOfLastAlert = Time.time;
