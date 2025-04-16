@@ -35,22 +35,22 @@ public static class Tags
     public const string Base = "Base";
 }
 
+// caused more issues that it fixed, i wanted to use this but just couldnt figure out how too
+// wouldve had the updatevision function only run ever [value] seconds instead of every frame
+//public static class DetectionUpdateFrequency
+//{
+//    public const float DefenderPatrol = 0.25f;
+//    public const float DefenderAttack = 0.1f;
+//    public const float DefenderCollect = 0.2f;
 
-// Fixed values for AI update frequency
-public static class DetectionUpdateFrequency
-{
-    public const float DefenderPatrol = 0.25f;
-    public const float DefenderAttack = 0.1f;
-    public const float DefenderCollect = 0.2f;
+//    public const float AttackerRoam = 0.125f;
+//    public const float AttackerAttack = 0.1f;
+//    public const float AttackerCollect = 0.2f;
 
-    public const float AttackerRoam = 0.125f;
-    public const float AttackerAttack = 0.1f;
-    public const float AttackerCollect = 0.2f;
-
-    public const float OverrideRoleRoam = 0.1f;
-    public const float OverrideRoleAttack = 0.1f;
-    public const float OverrideRoleCollect = 0.1f;
-}
+//    public const float OverrideRoleRoam = 0.1f;
+//    public const float OverrideRoleAttack = 0.1f;
+//    public const float OverrideRoleCollect = 0.1f;
+//}
 
 // Other Misc values for movement related stuff
 public static class AIConstants
@@ -74,7 +74,7 @@ public static class AIConstants
         public const float PickupRangeRestriction = 10f; // Ai will ignore any collectables outside of this distance
 
         // Enemy Engagment Rates
-        public const float EngagmentChance = 1f;
+        public const float EngagmentChance = 1f;// likely wont be used
         public const float EngagementRangeRestriction = 15f;
 
         public const float ReengagmentDistanceDelta = 10f;
@@ -99,7 +99,7 @@ public static class AIConstants
         public const float PickupRangeRestriction = 25f;
 
         // Enemy Engagment Rates
-        public const float EngagmentChance = 1f;
+        public const float EngagmentChance = 1f;// likely wont be used
         public const float ReengagmentDistanceDelta = 10f;
 
         // Heal Health Triggers
@@ -143,7 +143,7 @@ public static class AIConstants
         public const float PickupRangeRestriction = 10f;
 
         // Enemy Engagment Rates
-        public const float EngagmentChance = 1f;
+        public const float EngagmentChance = 1f; // likely wont be used
         public const float EngagementRangeRestriction = 25f;
         public const bool RetrieverThreatenedOverridesTarget = true;
         public const bool RetrieverThreatenedOverridesActions = true;
