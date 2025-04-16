@@ -75,7 +75,7 @@ public static class AIConstants
 
         // Enemy Engagment Rates
         public const float EngagmentChance = 1f;// likely wont be used
-        public const float EngagementRangeRestriction = 15f;
+        public const float EngagementRangeRestriction = 20f;
 
         public const float ReengagmentDistanceDelta = 10f;
 
