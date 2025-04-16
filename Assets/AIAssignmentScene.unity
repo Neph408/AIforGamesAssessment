@@ -1235,7 +1235,7 @@ MonoBehaviour:
   RTM1: {fileID: 2145974418}
   RTM2: {fileID: 1409281759}
   RTM3: {fileID: 240752274}
-  DefaultDisplay: 1
+  DefaultDisplay: 0
 --- !u!1 &1102755610
 GameObject:
   m_ObjectHideFlags: 0
