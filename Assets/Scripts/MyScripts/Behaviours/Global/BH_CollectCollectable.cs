@@ -86,7 +86,8 @@ public class BH_CollectCollectable : BehaviourStateTemplate
                         {
                             _AI._agentActions.DropItem(_AI._agentInventory.GetItem("Health Kit"));
                         }
-                        if(_AI._agentInventory.HasItem("Power Up").quantityOwned == _AI._agentInventory.Capacity / 2 && _AI._agentInventory.HasItem("Health Kit").quantityOwned == _AI._agentInventory.Capacity / 2) // if inv is colpletely occupied 50/50 with powerups, discard 1 at random                        {
+                        if(_AI._agentInventory.HasItem("Power Up").quantityOwned == _AI._agentInventory.Capacity / 2 && _AI._agentInventory.HasItem("Health Kit").quantityOwned == _AI._agentInventory.Capacity / 2) // if inv is completely occupied 50/50 with powerups, discard 1 at random 
+                        {
                             _AI._agentActions.DropItem(_AI._agentInventory.GetItem((Random.Range(0, 2) == 1) ? "Power Up" : "Health Kit"));
                         }
                         _aifsm._overrideRole = AIFSM.OverrideRole.Retriever;  // assign ret
