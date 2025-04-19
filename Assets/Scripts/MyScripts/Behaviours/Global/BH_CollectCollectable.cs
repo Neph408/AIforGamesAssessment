@@ -33,7 +33,7 @@ public class BH_CollectCollectable : BehaviourStateTemplate
 
         if ( Time.time > timeoutTimestamp)// in rare occasions, friendly ai can both try to grab the same collectable at the same time and push against eacherother in such a way that prevenst them picking the collectable up, this just means they stop trying after a certain duration, randomly however to allow for at least one to get .
         {
-            _aifsm._ignoredObjectList.Add(IntendedCollectable, 2f);
+            _aifsm._ignoredObjectList.Add(IntendedCollectable, 4f);
             _AI._agentActions.MoveTo(_AI.transform.position + new Vector3(Random.Range(-2f,2f),0f, Random.Range(-2f, 2f)));
             _aifsm.SetCurrentState(ReturnState);
             return GenerateResult(true);
@@ -85,6 +85,9 @@ public class BH_CollectCollectable : BehaviourStateTemplate
                         if (_AI._agentInventory.HasItem("Health Kit").quantityOwned > _AI._agentInventory.Capacity / 2)// if was flag, discard a single powerup if occupies more than half the inv. will prioritise most held
                         {
                             _AI._agentActions.DropItem(_AI._agentInventory.GetItem("Health Kit"));
+                        }
+                        if(_AI._agentInventory.HasItem("Power Up").quantityOwned == _AI._agentInventory.Capacity / 2 && _AI._agentInventory.HasItem("Health Kit").quantityOwned == _AI._agentInventory.Capacity / 2) // if inv is colpletely occupied 50/50 with powerups, discard 1 at random                        {
+                            _AI._agentActions.DropItem(_AI._agentInventory.GetItem((Random.Range(0, 2) == 1) ? "Power Up" : "Health Kit"));
                         }
                         _aifsm._overrideRole = AIFSM.OverrideRole.Retriever;  // assign ret
                         _AI._agentActions.CollectItem(IntendedCollectable); // pick up

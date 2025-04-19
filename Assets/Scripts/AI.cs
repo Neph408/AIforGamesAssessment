@@ -107,6 +107,7 @@ public class AI : MonoBehaviour
     public string currentJob;
     public ExecuteResult _result;
     public Color AICol;
+    public bool isEnabled = true;
 
     // Use this for initialization
     void Start ()
@@ -163,6 +164,7 @@ public class AI : MonoBehaviour
     void Update ()
     {
         // Run your AI code in here
+        if (!isEnabled) { return; }
         _result = _playerFSM.FSMUpdate();
         currentJob = _result.jobTitle;
     }
